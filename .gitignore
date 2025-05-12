@@ -28,4 +28,4 @@ go.work.sum
 # python venv
 .venv
 
-__pycache__
+__pycache__/
