@@ -1,38 +1,43 @@
-import React from 'react';
+"use client"
 
-type SidebarProps = {
-    activeTab: string;
-    setActiveTab: (tab: string) => void;
-};
+import React from "react";
 
-function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
-    return (
-        <div className="flex flex-col w-64 h-screen bg-gray-800 text-white">
-            <div className="flex items-center justify-center h-16 bg-gray-900">
-                <h1 className="text-xl font-bold">ComisionApp</h1>
-            </div>
-            <nav className="flex flex-col mt-4">
-                <button 
-                    onClick={() => setActiveTab('create')} 
-                    className={`px-4 py-2 text-left ${activeTab === 'create' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}
-                >
-                    委任状作成
-                </button>
-                <button 
-                    onClick={() => setActiveTab('pending')} 
-                    className={`px-4 py-2 text-left ${activeTab === 'pending' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}
-                >
-                    委任状管理 (共有前)
-                </button>
-                <button 
-                    onClick={() => setActiveTab('shared')} 
-                    className={`px-4 py-2 text-left ${activeTab === 'shared' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}
-                >
-                    委任状管理 (共有後)
-                </button>
-            </nav>
-        </div>
-    );
+interface SidebarProps {
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
 }
+
+const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
+  const tabs = [
+    { id: 'create', label: '委任状作成' },
+    { id: 'forms', label: 'フォーム管理' },
+    { id: 'pending', label: '保留中' },
+    { id: 'shared', label: '共有済み' },
+  ];
+
+  return (
+    <div className="w-64 h-screen bg-gray-800 text-white p-5">
+      <h1 className="text-2xl font-bold mb-6">委任状 App</h1>
+      <nav>
+        <ul>
+          {tabs.map(tab => (
+            <li key={tab.id} className="mb-2">
+              <button
+                className={`w-full text-left py-2 px-4 rounded transition-colors ${
+                  activeTab === tab.id
+                    ? 'bg-blue-600 text-white'
+                    : 'hover:bg-gray-700'
+                }`}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                {tab.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </div>
+  );
+};
 
 export default Sidebar;
