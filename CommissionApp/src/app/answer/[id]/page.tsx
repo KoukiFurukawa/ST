@@ -2,20 +2,9 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { toPng } from "html-to-image";
-import { saveAs } from "file-saver";
 import { useParams } from "next/navigation";
 
-// Mock database of forms - in a real application, this would be fetched from an API
-const mockForms: Record<string, { recipientName: string; recipientAddress: string; grantorName: string; grantorAddress: string; title: string }> = {
-    "1234": {
-        recipientName: "山田太郎",
-        recipientAddress: "東京都渋谷区",
-        grantorName: "",
-        grantorAddress: "",
-        title: "委任状サンプル1"
-    },
-    // More form templates could be added here
-};
+const FORMS_KEY = 'comision_forms';
 
 const AnswerPage = () => {
     const params = useParams();
@@ -33,12 +22,35 @@ const AnswerPage = () => {
     const formRef = useRef<HTMLFormElement>(null);
     const answerRef = useRef<HTMLDivElement>(null);
 
-    // Load form template if it exists
+    // Load form from localStorage on client side only
     useEffect(() => {
-        if (formId && mockForms[formId]) {
-            setFormData(mockForms[formId]);
-            if (mockForms[formId].title) {
-                setFormTitle(mockForms[formId].title);
+        if (formId && typeof window !== 'undefined') {
+            // First check our localStorage for forms
+            const savedForms = localStorage.getItem(FORMS_KEY);
+            if (savedForms) {
+                const forms = JSON.parse(savedForms);
+                const form = forms.find((f: any) => f.id === formId);
+                if (form) {
+                    setFormData({
+                        recipientName: form.recipientName || "",
+                        recipientAddress: form.recipientAddress || "",
+                        grantorName: form.grantorName || "",
+                        grantorAddress: form.grantorAddress || "",
+                    });
+                    setFormTitle(form.title || "委任状");
+                    return;
+                }
+            }
+            
+            // Fallback to mock data for demo purposes
+            if (formId === "1234") {
+                setFormData({
+                    recipientName: "山田太郎",
+                    recipientAddress: "東京都渋谷区",
+                    grantorName: "",
+                    grantorAddress: "",
+                });
+                setFormTitle("委任状サンプル1");
             }
         }
     }, [formId]);

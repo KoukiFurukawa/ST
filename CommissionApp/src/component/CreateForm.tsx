@@ -1,62 +1,133 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react'
+import { v4 as uuidv4 } from 'uuid';
+import { FormTemplate } from '@/lib/interfaces';
+import { FORMS_KEY } from '@/lib/constants';
 
-function CreateForm() {
+const CreateForm = () => {
+
+    const [isClient, setIsClient] = useState(false);
+    const [forms, setForms] = useState<FormTemplate[]>([]);
+
+      // Set isClient to true when component mounts on client
+    useEffect(() => {
+        setIsClient(true);
+        
+        // Load saved forms from localStorage only on client side
+        const savedForms = localStorage.getItem(FORMS_KEY);
+        if (savedForms) {
+            setForms(JSON.parse(savedForms));
+        }
+    }, []);
+
+    const [formData, setFormData] = useState<FormTemplate>({
+        id: '',
+        title: '委任状',
+        description: '',
+        recipientName: '',
+        recipientAddress: '',
+        grantorName: '',
+        grantorAddress: '',
+        createdAt: Date.now()
+    });
+
+    const handleInputChange = (
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    ) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({
+        ...prev,
+        [name]: value
+        }));
+    };
+
+    const createNewForm = (e: React.FormEvent) => {
+        e.preventDefault();
+        const newForm = {
+            ...formData,
+            id: uuidv4(),
+            createdAt: Date.now()
+        };
+        
+        const updatedForms = [...forms, newForm];
+        setForms(updatedForms);
+        
+        // Save to localStorage
+        if (typeof window !== 'undefined') {
+            localStorage.setItem(FORMS_KEY, JSON.stringify(updatedForms));
+        }
+        
+        // Reset form
+        setFormData({
+            id: '',
+            title: '委任状',
+            description: '',
+            recipientName: '',
+            recipientAddress: '',
+            grantorName: '',
+            grantorAddress: '',
+            createdAt: Date.now()
+        });
+        
+    };
+
     return (
         <div className="flex-1 p-8">
             <h1 className="text-2xl font-bold mb-6">委任状作成</h1>
-            <div className="bg-white shadow-md rounded-lg p-6">
-                <form>
-                    <div className="mb-4">
-                        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="title">
-                            タイトル
-                        </label>
-                        <input
-                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                            id="title"
-                            type="text"
-                            placeholder="委任状のタイトル"
-                        />
-                    </div>
-                    <div className="mb-4">
-                        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="recipient">
-                            宛先
-                        </label>
-                        <input
-                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                            id="recipient"
-                            type="text"
-                            placeholder="宛先の名前"
-                        />
-                    </div>
-                    <div className="mb-4">
-                        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="content">
-                            内容
-                        </label>
-                        <textarea
-                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                            id="content"
-                            rows={5}
-                            placeholder="委任状の内容"
-                        ></textarea>
-                    </div>
-                    <div className="flex items-center justify-between">
-                        <button
-                            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                            type="button"
-                        >
-                            保存
-                        </button>
-                        <button
-                            className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                            type="button"
-                        >
-                            共有
-                        </button>
-                    </div>
-                </form>
-            </div>
+            <form onSubmit={createNewForm} className="mb-8 p-4 border border-gray-200 rounded-lg">
+                <div className="mb-4">
+                    <label className="block mb-2">フォームタイトル:</label>
+                    <input
+                        type="text"
+                        name="title"
+                        value={formData.title}
+                        onChange={handleInputChange}
+                        className="border p-2 w-full"
+                        required
+                    />
+                </div>
+
+                <div className="mb-4">
+                    <label className="block mb-2">受任者名 (デフォルト):</label>
+                    <input
+                        type="text"
+                        name="recipientName"
+                        value={formData.recipientName}
+                        onChange={handleInputChange}
+                        className="border p-2 w-full"
+                    />
+                </div>
+
+                <div className="mb-4">
+                    <label className="block mb-2">受任者住所 (デフォルト):</label>
+                    <input
+                        type="text"
+                        name="recipientAddress"
+                        value={formData.recipientAddress}
+                        onChange={handleInputChange}
+                        className="border p-2 w-full"
+                    />
+                </div>
+
+                <div className="mb-4">
+                    <label className="block mb-2">内容:</label>
+                    <textarea
+                        name="recipientAddress"
+                        value={formData.recipientAddress}
+                        onChange={handleInputChange}
+                        className="border p-2 w-full h-32 resize-y"
+                        rows={4}
+                    ></textarea>
+                </div>
+
+                <button
+                    type="submit"
+                    className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded w-full mt-4"
+                >
+                    フォームを作成
+                </button>
+            </form>
         </div>
     );
 }
 
-export default CreateForm;
+export default CreateForm
