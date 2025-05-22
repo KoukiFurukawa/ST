@@ -1,0 +1,1 @@
+export const FORMS_KEY = 'commission_forms';
