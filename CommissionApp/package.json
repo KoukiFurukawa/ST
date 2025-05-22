@@ -9,13 +9,15 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@types/uuid": "^10.0.0",
     "file-saver": "^2.0.5",
     "html-to-image": "^1.11.13",
     "next": "15.3.0",
     "qrcode": "^1.5.4",
     "qrcode.react": "^4.2.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

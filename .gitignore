@@ -24,3 +24,8 @@ go.work.sum
 # env file
 .env
 /Static
+
+# python venv
+.venv
+
+__pycache__/

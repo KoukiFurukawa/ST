@@ -64,3 +64,5 @@ def display_results(result):
     print(result.choices[0].message.content)
     print(f"- 完了トークン: {result.usage.completion_tokens}")
     print(f"- プロンプトトークン: {result.usage.prompt_tokens}")
+
+    return result.choices[0].message.content
