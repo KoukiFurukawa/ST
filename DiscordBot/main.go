@@ -58,7 +58,7 @@ func main() {
 	// commandHandler.CommandRegister(commands.RecordCommand())
 	// commandHandler.CommandRegister(commands.DisconnectCommand())
 	commandHandler.CommandRegister(commands.CrawlingTextCommand())
-	commandHandler.CommandRegister(commands.PostTextCommand())
+	commandHandler.CommandRegister(commands.SummariesCommand())
 	commandHandlers = append(commandHandlers, commandHandler)
 
 	fmt.Println("Discordに接続しました。")

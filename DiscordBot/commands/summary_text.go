@@ -14,15 +14,17 @@ import (
 
 const fastAPIURL = "https://st-kdaz.onrender.com/items/"
 
-func PostTextCommand() *botRouter.Command {
+// 命名を変更
+func SummariesCommand() *botRouter.Command {
 	return &botRouter.Command{
 		Name:        "summary",
 		Description: "このチャンネルまたはスレッドの会話全体をFastAPIサーバに送信して要約を受け取ります",
-		Executor:    handlePostText,
+		Executor:    handleSummaries,
 	}
 }
 
-func handlePostText(s *discordgo.Session, i *discordgo.InteractionCreate) {
+// 命名を変更
+func handleSummaries(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	channelID := i.ChannelID
 
 	// 3秒以内に一時応答を返す
@@ -34,15 +36,15 @@ func handlePostText(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		return
 	}
 
-	// メッセージ取得
-	messages, err := s.ChannelMessages(channelID, 100, "", "", "")
+	// 全メッセージ取得（100件ずつ繰り返し）
+	messages, err := fetchAllMessages(s, channelID)
 	if err != nil {
 		log.Printf("メッセージ取得失敗: %v\n", err)
 		editWithError(s, i, "メッセージの取得に失敗しました。")
 		return
 	}
 
-	// 古い順に並び替え
+	// 古い順に並べ替え
 	for i, j := 0, len(messages)-1; i < j; i, j = i+1, j-1 {
 		messages[i], messages[j] = messages[j], messages[i]
 	}
@@ -88,7 +90,6 @@ func handlePostText(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		return
 	}
 
-	// レスポンスを取得
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Printf("レスポンス読み込み失敗: %v\n", err)
@@ -99,7 +100,7 @@ func handlePostText(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
 	log.Printf("FastAPIからの返り値（要約結果）:\n%s\n", summary)
 
-	// 最後に編集して結果を送信
+	// 結果を送信
 	_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
 		Content: &summary,
 	})
@@ -116,4 +117,30 @@ func editWithError(s *discordgo.Session, i *discordgo.InteractionCreate, message
 	if err != nil {
 		log.Printf("エラーメッセージ送信失敗: %v\n", err)
 	}
+}
+
+// 追記項目全件取得関数
+func fetchAllMessages(s *discordgo.Session, channelID string) ([]*discordgo.Message, error) {
+	var allMessages []*discordgo.Message
+	var lastMessageID string
+
+	for {
+		messages, err := s.ChannelMessages(channelID, 100, lastMessageID, "", "")
+		if err != nil {
+			return nil, err
+		}
+		if len(messages) == 0 {
+			break
+		}
+
+		allMessages = append(allMessages, messages...)
+		lastMessageID = messages[len(messages)-1].ID
+
+		if len(messages) < 100 {
+			break
+		}
+	}
+
+	log.Printf("合計 %d 件のメッセージを取得しました。\n", len(allMessages))
+	return allMessages, nil
 }
