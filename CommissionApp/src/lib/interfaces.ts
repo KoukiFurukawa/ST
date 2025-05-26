@@ -4,7 +4,6 @@ export interface FormTemplate {
   description: string;
   recipientName: string;
   recipientAddress: string;
-  grantorName: string;
-  grantorAddress: string;
-  createdAt: number;
+  created_at: number;
+  open: boolean;
 }
