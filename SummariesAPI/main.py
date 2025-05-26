@@ -14,6 +14,8 @@ class Data(BaseModel):
     id : str 
     title : str
     description : str
+    recipientName : str
+    recipientAddress: str
     created_at : datetime
     open : bool
 
@@ -33,7 +35,7 @@ app = FastAPI()
 # 初期化
 client, deployment = initialize_client()
 cosmos_client, database, cosmos_datacontainer = create_datacosmos_client()
-cosmos_client, database, cosmos_anscontainer = create_anscosmos_client()
+_, _, cosmos_anscontainer = create_anscosmos_client()
 
 @app.post("/items/")
 async def create_item(item: Item):
@@ -64,6 +66,8 @@ async def create_commission_data(data: Data):
         "id": data.id,
         "title": data.title,
         "description": data.description,
+        "recipientName" : data.recipientName,
+        "recipientAddress": data.recipientAddress,
         "created_at": data.created_at.isoformat(),  # ISOフォーマットで保存
         "open": data.open
     }
