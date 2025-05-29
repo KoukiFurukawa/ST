@@ -116,14 +116,12 @@ async def create_answer_data(ans: Answer):
 # 委任状回答の取得
 @app.post("/get_answer_ids/")
 async def get_ans_data():
-    # id のみを取得するクエリ
-    query = "SELECT c.id FROM c"
+    # 全件取得するクエリ
+    query = "SELECT * FROM c"
 
     # クエリを実行
     items = cosmos_anscontainer.query_items(query=query, enable_cross_partition_query=True)
 
-    # id だけを取り出してリストに変換
-    id_list = [item['id'] for item in items]
+    ans_data = [item for item in items]
 
-    return {"ids": id_list}
-
+    return ans_data
