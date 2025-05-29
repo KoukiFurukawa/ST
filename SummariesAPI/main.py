@@ -20,6 +20,7 @@ class Data(BaseModel):
     open : bool
 
 class Answer(BaseModel):
+    id: str
     commissionID : str
     userId : str
     answer : str
@@ -56,11 +57,13 @@ async def create_item(item: Item):
 # 委任状データの追加
 @app.post("/upload_data/")
 async def create_commission_data(data: Data):
-    # 既存のデータがすでに存在するかチェック
-    existing_item = await cosmos_datacontainer.read_item(data.id, partition_key=data.id)
-
-    if existing_item:
-        raise HTTPException(status_code=400, detail="委任状データはすでに存在します。")
+    try:
+        existing_item = await cosmos_anscontainer.read_item(data.id)
+        if existing_item:
+            raise HTTPException(status_code=400, detail="回答データはすでに存在します。")
+    except Exception:
+        # 存在しない場合は例外が投げられるので無視
+        pass
 
     new_item = {
         "id": data.id,
@@ -103,6 +106,7 @@ async def create_answer_data(ans: Answer):
         pass
 
     new_ans = {
+        "id": ans.id,
         "commissionID": ans.commissionID,
         "userId": ans.userId,
         "answer": ans.answer,
