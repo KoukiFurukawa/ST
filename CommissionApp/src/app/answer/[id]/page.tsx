@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { toPng } from "html-to-image";
+import { saveAs } from "file-saver";
 
 const AnswerPage = () => {
   const [formData, setFormData] = useState({
@@ -10,18 +11,11 @@ const AnswerPage = () => {
     grantorName: "",
     grantorAddress: "",
   });
+
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isAndroid, setIsAndroid] = useState(false);
-  const formRef = useRef(null);
-  const answerRef = useRef(null);
-
-  useEffect(() => {
-    const userAgent = navigator.userAgent || navigator.vendor;
-    if (/android/i.test(userAgent)) {
-      setIsAndroid(true);
-    }
-  }, []);
+  const formRef = useRef<HTMLFormElement>(null);
+  const answerRef = useRef<HTMLDivElement>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -58,24 +52,35 @@ const AnswerPage = () => {
     }
   };
 
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSubmit(new Event("submit") as unknown as React.FormEvent<HTMLFormElement>);
+    }
+  };
+
   const handleLogin = async () => {
-    if (isAndroid && "NDEFReader" in window) {
+    if ("NDEFReader" in window) {
       try {
         const ndef = new (window as any).NDEFReader();
         await ndef.scan();
+        alert("スマホをマイナンバーカードにかざしてください...");
+
         ndef.onreading = (event: any) => {
           const message = event.message;
           for (const record of message.records) {
-            console.log("NFC record:", record);
-            alert("マイナンバーカードのNFCを読み取りました。ログイン完了。");
+            console.log("NFC読み取り成功:", record);
+            alert("マイナンバーカードが読み取られました！");
             setIsLoggedIn(true);
+            break;
           }
         };
       } catch (error) {
-        alert("NFC読み取りに失敗しました。対応端末を使用してください。");
+        console.error("NFC読み取りエラー:", error);
+        alert("NFC読み取りに失敗しました。対応端末か確認してください。");
       }
     } else {
-      alert("この端末はNFCに対応していないか、Android端末ではありません。");
+      alert("この端末・ブラウザはNFCに対応していません。");
     }
   };
 
@@ -88,19 +93,18 @@ const AnswerPage = () => {
       <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
         <div className="bg-white shadow-lg rounded-2xl p-8 w-full max-w-md text-center">
           <h1 className="text-2xl font-bold mb-6">マイナンバー ログイン</h1>
-          {isAndroid ? (
-            <button
-              onClick={handleLogin}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full mb-4"
-            >
-              マイナンバーカードでログイン（NFC）
-            </button>
-          ) : (
-            <p className="mb-4 text-gray-600">この端末はNFCログインに対応していません。</p>
-          )}
+          <button
+            onClick={handleLogin}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full mb-4"
+          >
+            マイナンバーカードでログイン（スマホNFC）
+          </button>
+          <p className="text-sm text-gray-500 mt-2">
+            ※ Android版Chromeのみ対応。iPhoneやPCではご利用いただけません。
+          </p>
           <button
             onClick={handleAdminLogin}
-            className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded w-full"
+            className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded w-full mt-4"
           >
             管理者用ログイン（動作確認）
           </button>
@@ -138,32 +142,40 @@ const AnswerPage = () => {
               name="recipientName"
               value={formData.recipientName}
               onChange={handleInputChange}
+              onKeyDown={handleKeyPress}
               className="border p-2 mb-4 w-full"
             />
+
             <label className="block mb-2">受任者住所:</label>
             <input
               type="text"
               name="recipientAddress"
               value={formData.recipientAddress}
               onChange={handleInputChange}
+              onKeyDown={handleKeyPress}
               className="border p-2 mb-4 w-full"
             />
+
             <label className="block mb-2">委任者名:</label>
             <input
               type="text"
               name="grantorName"
               value={formData.grantorName}
               onChange={handleInputChange}
+              onKeyDown={handleKeyPress}
               className="border p-2 mb-4 w-full"
             />
+
             <label className="block mb-2">委任者住所:</label>
             <input
               type="text"
               name="grantorAddress"
               value={formData.grantorAddress}
               onChange={handleInputChange}
+              onKeyDown={handleKeyPress}
               className="border p-2 mb-4 w-full"
             />
+
             <button
               type="submit"
               className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full mt-4"
