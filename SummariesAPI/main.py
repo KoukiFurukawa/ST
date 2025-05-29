@@ -113,7 +113,6 @@ async def create_answer_data(ans: Answer):
         "created_at": ans.created_at.isoformat(),  # ISOフォーマットで保存
     }
 
-    # create_ans = cosmos_anscontainer.create_item(body=new_ans)
     create_ans = cosmos_anscontainer.create_item(body=new_ans)
     print("回答データを追加しました。")
     return create_ans
