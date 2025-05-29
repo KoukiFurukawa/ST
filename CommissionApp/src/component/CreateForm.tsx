@@ -46,10 +46,10 @@ const CreateForm = () => {
             headers: {
                 'Content-Type': 'application/json',
             }, 
-            body : JSON.stringify({
-                "description": data.description,
-            })
-            // body: JSON.stringify(data)
+            // body : JSON.stringify({
+            //     "description": data.description,
+            // })
+            body: JSON.stringify(data)
         });
 
         const result = await res.json();

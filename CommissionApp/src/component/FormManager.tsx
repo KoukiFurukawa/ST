@@ -71,7 +71,7 @@ const FormManager = () => {
                                     </div>
                                 </div>
                                 <p className="text-sm text-gray-600 mt-2">
-                                    作成日: {new Date(form.createdAt).toLocaleDateString()}
+                                    作成日: {new Date(form.created_at).toLocaleDateString()}
                                 </p>
                             </div>
                         ))}

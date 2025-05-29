@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
 
         console.log('受信したデータ:', requestData);
 
-        const externalResponse = await fetch('https://st-kdaz.onrender.com/items/', {
+        const externalResponse = await fetch('https://st-kdaz.onrender.com/upload_data/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
