@@ -103,6 +103,7 @@ async def create_answer_data(ans: Answer):
         pass
 
     new_ans = {
+        "commissionID": ans.commissionID,
         "userId": ans.userId,
         "answer": ans.answer,
         "created_at": ans.created_at.isoformat(),  # ISOフォーマットで保存
