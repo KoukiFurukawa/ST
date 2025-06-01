@@ -2,11 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { FormTemplate, Answer } from '@/lib/interfaces'; // Import Answer
 import Swal from 'sweetalert2';
 
-interface FormsAndAnswersResponse {
-    forms: FormTemplate[];
-    answers: Answer[];
-}
-
 function AnswerManagement() {
     const [forms, setForms] = useState<FormTemplate[]>([]);
     const [answers, setAnswers] = useState<Answer[]>([]);
@@ -18,23 +13,32 @@ function AnswerManagement() {
         const fetchData = async () => {
             setIsLoading(true);
             try {
-                const response = await fetch('/api/get_forms_and_answers', {
-                    method: 'POST', // Matches the internal API route
-                });
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.details || `Failed to fetch data: ${response.statusText}`);
+                // Fetch forms and answers concurrently
+                const [formsResponse, answersResponse] = await Promise.all([
+                    fetch('/api/getforms', { method: 'POST' }), // Endpoint for forms
+                    fetch('/api/getallanswers', { method: 'POST' }) // New endpoint for all answers
+                ]);
+
+                if (!formsResponse.ok) {
+                    const errorData = await formsResponse.json();
+                    throw new Error(`Failed to fetch forms: ${errorData.details || formsResponse.statusText}`);
                 }
-                const data: FormsAndAnswersResponse = await response.json();
+                if (!answersResponse.ok) {
+                    const errorData = await answersResponse.json();
+                    throw new Error(`Failed to fetch answers: ${errorData.details || answersResponse.statusText}`);
+                }
+
+                const formsData: FormTemplate[] = await formsResponse.json();
+                const answersData: Answer[] = await answersResponse.json();
                 
                 // Convert created_at to number if they are strings from the API
-                const processedForms = data.forms.map(form => ({
+                const processedForms = (formsData || []).map(form => ({
                     ...form,
-                    created_at: typeof form.created_at === 'string' ? new Date(form.created_at).getTime() : form.created_at,
+                    created_at: typeof form.created_at === 'string' ? new Date(form.created_at).getTime() : Number(form.created_at),
                 }));
-                const processedAnswers = data.answers.map(answer => ({
+                const processedAnswers = (answersData || []).map(answer => ({
                     ...answer,
-                    created_at: typeof answer.created_at === 'string' ? new Date(answer.created_at).getTime() : answer.created_at,
+                    created_at: typeof answer.created_at === 'string' ? new Date(answer.created_at).getTime() : Number(answer.created_at),
                 }));
 
                 setForms(processedForms || []);
