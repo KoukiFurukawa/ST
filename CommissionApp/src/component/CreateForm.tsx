@@ -46,9 +46,6 @@ const CreateForm = () => {
             headers: {
                 'Content-Type': 'application/json',
             }, 
-            // body : JSON.stringify({
-            //     "description": data.description,
-            // })
             body: JSON.stringify(data)
         });
 

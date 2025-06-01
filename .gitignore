@@ -29,3 +29,4 @@ go.work.sum
 .venv
 
 __pycache__/
+.venv/
