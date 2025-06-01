@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { toPng } from "html-to-image";
 import { FormTemplate } from "@/lib/interfaces"; 
 import Swal from "sweetalert2";
 import { v4 as uuidv4 } from 'uuid';
+import React, { useEffect, useState, useRef } from "react";
 
 const AnswerPage = () => {
   const params = useParams();
@@ -15,6 +15,8 @@ const AnswerPage = () => {
   const [formTemplate, setFormTemplate] = useState<FormTemplate | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showNfcPrompt, setShowNfcPrompt] = useState(false);
   
   const [formData, setFormData] = useState({
     recipientName: "",
@@ -87,6 +89,52 @@ const AnswerPage = () => {
       return;
     }
     setIsSubmitted(true);
+  };
+
+  // 管理者用ログイン（動作確認用）
+  const handleAdminLogin = () => {
+    setIsLoggedIn(true);
+  };
+
+  // NFC読み取り開始
+  const handleLogin = async () => {
+    if (!("NDEFReader" in window)) {
+      alert("この端末・ブラウザはNFCに対応していません。");
+      return;
+    }
+
+    setShowNfcPrompt(true);
+    alert("スマホを交通系ICカードやNFCタグにかざしてください...");
+
+    try {
+      const ndef = new (window as any).NDEFReader();
+      await ndef.scan();
+
+      ndef.onreading = (event: any) => {
+        // どんなNFCでも検出できたらログイン成功扱いにする
+        setIsLoggedIn(true);
+        setShowNfcPrompt(false);
+      };
+
+      ndef.onreadingerror = (event: any) => {
+        // 読み取りエラーでも次に進む（要件によるが）
+        alert("NFC読み取りに失敗しましたが、カードがかざされたとみなして次の画面に進みます。");
+        setIsLoggedIn(true);
+        setShowNfcPrompt(false);
+      };
+
+      // 5秒で読み取り失敗とみなして戻す
+      setTimeout(() => {
+        if (!isLoggedIn) {
+          alert("NFCカードが検出されませんでした。ログイン画面に戻ります。");
+          setShowNfcPrompt(false);
+        }
+      }, 5000);
+    } catch (error) {
+      alert("NFCスキャンが開始できませんでした。対応端末か確認してください。");
+      setShowNfcPrompt(false);
+      console.error(error);
+    }
   };
 
   const handleBackToForm = () => {
@@ -203,6 +251,33 @@ const AnswerPage = () => {
     );
   }
   
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+        <div className="bg-white shadow-lg rounded-2xl p-8 w-full max-w-md text-center">
+          <h1 className="text-2xl font-bold mb-6">マイナンバー ログイン</h1>
+          <button
+            onClick={handleLogin}
+            disabled={showNfcPrompt}
+            className={`bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full mb-4 ${
+              showNfcPrompt ? "opacity-50 cursor-not-allowed" : ""
+            }`}
+          >
+            マイナンバーカードでログイン（スマホNFC）
+          </button>
+          <p className="text-sm text-gray-500 mt-2">
+            ※ Android版Chromeのみ対応。iPhoneやPCではご利用いただけません。
+          </p>
+          <button
+            onClick={handleAdminLogin}
+            className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded w-full mt-4"
+          >
+            管理者用ログイン（動作確認）
+          </button>
+        </div>
+      </div>
+    );
+  }
   // Removed isLoggedIn check and login UI
 
   if (!formTemplate) { // Fallback if formTemplate is still null after loading and no error
