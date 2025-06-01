@@ -1,9 +1,21 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import { useParams } from "next/navigation";
+import Link from "next/link";
 import { toPng } from "html-to-image";
+import { FormTemplate } from "@/lib/interfaces"; 
+import Swal from "sweetalert2";
+import { v4 as uuidv4 } from 'uuid';
 
 const AnswerPage = () => {
+  const params = useParams();
+  const formId = params.id as string;
+
+  const [formTemplate, setFormTemplate] = useState<FormTemplate | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
   const [formData, setFormData] = useState({
     recipientName: "",
     recipientAddress: "",
@@ -11,17 +23,49 @@ const AnswerPage = () => {
     grantorAddress: "",
   });
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isAndroid, setIsAndroid] = useState(false);
   const formRef = useRef(null);
   const answerRef = useRef(null);
 
   useEffect(() => {
-    const userAgent = navigator.userAgent || navigator.vendor;
-    if (/android/i.test(userAgent)) {
-      setIsAndroid(true);
+    if (formId) {
+      const fetchFormTemplate = async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+          const response = await fetch(`/api/getform/${formId}`);
+          if (!response.ok) {
+            const errorData = await response.json();
+            if (response.status === 404) {
+              setError(`指定されたIDのフォームが見つかりません。(ID: ${formId})`);
+            } else {
+              setError(`フォームの読み込みに失敗しました: ${errorData.details || response.statusText}`);
+            }
+            setFormTemplate(null);
+            return;
+          }
+          const data: FormTemplate = await response.json();
+          setFormTemplate(data);
+          setFormData(prev => ({
+            ...prev,
+            recipientName: data.recipientName || "",
+            recipientAddress: data.recipientAddress || "",
+            grantorName: "", 
+            grantorAddress: "",
+          }));
+        } catch (e) {
+          console.error("Failed to fetch form template:", e);
+          setError(`フォームの読み込み中に予期せぬエラーが発生しました。${e instanceof Error ? e.message : ''}`);
+          setFormTemplate(null);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchFormTemplate();
+    } else {
+      setError("フォームIDがURLに含まれていません。");
+      setIsLoading(false);
     }
-  }, []);
+  }, [formId]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -34,6 +78,10 @@ const AnswerPage = () => {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const { recipientName, recipientAddress, grantorName, grantorAddress } = formData;
+    if (!formTemplate) { // Check if formTemplate is loaded
+      Swal.fire('エラー', 'フォーム情報が読み込まれていません。ページを再読み込みしてください。', 'error');
+      return;
+    }
     if (!recipientName || !recipientAddress || !grantorName || !grantorAddress) {
       alert("すべての欄を入力してください。");
       return;
@@ -58,62 +106,124 @@ const AnswerPage = () => {
     }
   };
 
-  const handleLogin = async () => {
-    if (isAndroid && "NDEFReader" in window) {
-      try {
-        const ndef = new (window as any).NDEFReader();
-        await ndef.scan();
-        ndef.onreading = (event: any) => {
-          const message = event.message;
-          for (const record of message.records) {
-            console.log("NFC record:", record);
-            alert("マイナンバーカードのNFCを読み取りました。ログイン完了。");
-            setIsLoggedIn(true);
-          }
-        };
-      } catch (error) {
-        alert("NFC読み取りに失敗しました。対応端末を使用してください。");
+  const handleSendAnswer = async () => {
+    if (!formTemplate) {
+      Swal.fire('エラー', 'フォーム情報が読み込まれていません。', 'error');
+      return;
+    }
+    if (!isSubmitted) {
+      Swal.fire('エラー', 'まずフォーム内容を確認し、提出準備を完了してください。', 'error');
+      return;
+    }
+
+    const userId = uuidv4(); // Generate a unique user ID
+    const commissionID = formId;
+
+    const answerPayload = {
+      commissionID,
+      userID: userId,
+      answer: JSON.stringify({
+        formTitle: formTemplate.title,
+        formDescription: formTemplate.description,
+        recipientName: formData.recipientName,
+        recipientAddress: formData.recipientAddress,
+        grantorName: formData.grantorName,
+        grantorAddress: formData.grantorAddress,
+        submittedAt: new Date().toISOString(),
+      }),
+    };
+
+    Swal.fire({
+      title: '処理中...',
+      text: '回答を送信しています。',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
       }
-    } else {
-      alert("この端末はNFCに対応していないか、Android端末ではありません。");
+    });
+
+    try {
+      const response = await fetch('/api/submitanswer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(answerPayload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.details || `サーバーエラー: ${response.status}`);
+      }
+
+      // const result = await response.json(); // Assuming the API returns some confirmation
+      Swal.fire({
+        icon: 'success',
+        title: '成功',
+        text: '回答が正常に送信されました。',
+      });
+      // Optionally, redirect or clear form
+      // setIsSubmitted(false); 
+      // setFormData({ recipientName: "", recipientAddress: "", grantorName: "", grantorAddress: ""});
+
+
+    } catch (error) {
+      console.error("Answer submission error:", error);
+      Swal.fire({
+        icon: 'error',
+        title: '送信エラー',
+        text: `回答の送信中にエラーが発生しました。(${(error as Error).message || '不明なエラー'})`,
+      });
     }
   };
 
-  const handleAdminLogin = () => {
-    setIsLoggedIn(true);
-  };
 
-  if (!isLoggedIn) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-        <div className="bg-white shadow-lg rounded-2xl p-8 w-full max-w-md text-center">
-          <h1 className="text-2xl font-bold mb-6">マイナンバー ログイン</h1>
-          {isAndroid ? (
-            <button
-              onClick={handleLogin}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full mb-4"
-            >
-              マイナンバーカードでログイン（NFC）
-            </button>
-          ) : (
-            <p className="mb-4 text-gray-600">この端末はNFCログインに対応していません。</p>
-          )}
-          <button
-            onClick={handleAdminLogin}
-            className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded w-full"
-          >
-            管理者用ログイン（動作確認）
-          </button>
+        <div className="text-center">
+          <div role="status" className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" />
+          <p className="text-xl mt-4">フォームを読み込み中...</p>
         </div>
       </div>
     );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+        <div className="bg-white shadow-lg rounded-2xl p-8 w-full max-w-lg text-center">
+          <h1 className="text-2xl font-bold mb-4 text-red-600">エラー</h1>
+          <p className="text-gray-700 mb-6 whitespace-pre-wrap">{error}</p>
+          <Link href="/" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            管理画面に戻る
+          </Link>
+        </div>
+      </div>
+    );
+  }
+  
+  // Removed isLoggedIn check and login UI
+
+  if (!formTemplate) { // Fallback if formTemplate is still null after loading and no error
+      return (
+          <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+              <div className="bg-white shadow-lg rounded-2xl p-8 w-full max-w-lg text-center">
+                  <h1 className="text-2xl font-bold mb-4 text-orange-600">情報なし</h1>
+                  <p className="text-gray-700 mb-6">フォーム情報を読み込めませんでした。ページを再読み込みするか、IDを確認してください。</p>
+                  <Link href="/" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                      管理画面に戻る
+                  </Link>
+              </div>
+          </div>
+      );
   }
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
       <div className="bg-white shadow-lg rounded-2xl p-8 w-full max-w-lg">
         <h1 className="text-2xl font-bold mb-6 text-center">
-          {isSubmitted ? "確認画面" : "委任状 入力フォーム"}
+          {isSubmitted ? `確認画面: ${formTemplate.title}` : formTemplate.title || "委任状 入力フォーム"}
         </h1>
 
         {isSubmitted ? (
@@ -122,7 +232,8 @@ const AnswerPage = () => {
             className="space-y-4 p-6 border border-gray-300 rounded-lg bg-white"
             style={{ fontFamily: "serif" }}
           >
-            <p className="text-center font-semibold">私は下記の通り、業務を委託します。</p>
+            <h2 className="text-lg font-semibold text-center mb-2">{formTemplate.title}</h2>
+            <p className="text-sm text-gray-700 mb-4 whitespace-pre-wrap text-center">{formTemplate.description}</p>
             <div className="border-t border-gray-400 my-2" />
             <p><span className="font-semibold">受任者名 :</span> {formData.recipientName}</p>
             <p><span className="font-semibold">受任者住所 :</span> {formData.recipientAddress}</p>
@@ -188,7 +299,7 @@ const AnswerPage = () => {
               戻る
             </button>
             <button
-              onClick={() => {}}
+              onClick={handleSendAnswer}
               className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
             >
               送信する
