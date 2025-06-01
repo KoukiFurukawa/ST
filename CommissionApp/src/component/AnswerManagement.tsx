@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FormTemplate, Answer } from '@/lib/interfaces'; // Import Answer
 import Swal from 'sweetalert2';
+import Link from 'next/link'; // Import Link for navigation
 
 function AnswerManagement() {
     const [forms, setForms] = useState<FormTemplate[]>([]);
@@ -105,6 +106,13 @@ function AnswerManagement() {
                             <div className="flex justify-between items-center mb-3">
                                 <h3 className="text-xl font-semibold text-gray-800">{form.title}</h3>
                                 <div className="flex space-x-2">
+                                    <Link href={`/answer/${form.id}`} passHref>
+                                        <button
+                                            className="bg-purple-500 hover:bg-purple-600 text-white py-1 px-3 rounded text-sm transition-colors"
+                                        >
+                                            回答画面表示
+                                        </button>
+                                    </Link>
                                     <button
                                         onClick={() => handleShowDetails(form)}
                                         className="bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded text-sm transition-colors"
