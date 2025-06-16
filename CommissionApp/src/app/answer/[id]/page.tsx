@@ -297,9 +297,15 @@ const AnswerPage = () => {
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
       <div className="bg-white shadow-lg rounded-2xl p-8 w-full max-w-lg">
-        <h1 className="text-2xl font-bold mb-6 text-center">
+        <h1 className="text-2xl font-bold mb-2 text-center">
           {isSubmitted ? `確認画面: ${formTemplate.title}` : formTemplate.title || "委任状 入力フォーム"}
         </h1>
+
+        {!isSubmitted && formTemplate.description && (
+          <p className="text-sm text-gray-700 mb-6 whitespace-pre-wrap text-center">
+            {formTemplate.description}
+          </p>
+        )}
 
         {isSubmitted ? (
           <div
@@ -308,13 +314,27 @@ const AnswerPage = () => {
             style={{ fontFamily: "serif" }}
           >
             <h2 className="text-lg font-semibold text-center mb-2">{formTemplate.title}</h2>
-            <p className="text-sm text-gray-700 mb-4 whitespace-pre-wrap text-center">{formTemplate.description}</p>
+            <p className="text-sm text-gray-700 mb-4 whitespace-pre-line text-center">{formTemplate.description}</p>
             <div className="border-t border-gray-400 my-2" />
-            <p><span className="font-semibold">受任者名 :</span> {formData.recipientName}</p>
-            <p><span className="font-semibold">受任者住所 :</span> {formData.recipientAddress}</p>
-            <div className="border-t border-gray-400 my-2" />
-            <p><span className="font-semibold">委任者名 :</span> {formData.grantorName}</p>
-            <p><span className="font-semibold">委任者住所 :</span> {formData.grantorAddress}</p>
+            <div className="grid grid-cols-1 gap-2">
+              <div className="flex flex-wrap">
+                <span className="font-semibold min-w-[90px]">受任者名 :</span> 
+                <span className="break-all">{formData.recipientName}</span>
+              </div>
+              <div className="flex flex-wrap">
+                <span className="font-semibold min-w-[90px]">受任者住所 :</span> 
+                <span className="break-all">{formData.recipientAddress}</span>
+              </div>
+              <div className="border-t border-gray-400 my-2" />
+              <div className="flex flex-wrap">
+                <span className="font-semibold min-w-[90px]">委任者名 :</span> 
+                <span className="break-all">{formData.grantorName}</span>
+              </div>
+              <div className="flex flex-wrap">
+                <span className="font-semibold min-w-[90px]">委任者住所 :</span> 
+                <span className="break-all">{formData.grantorAddress}</span>
+              </div>
+            </div>
           </div>
         ) : (
           <form ref={formRef} onSubmit={handleSubmit}>
@@ -361,12 +381,12 @@ const AnswerPage = () => {
 
         {isSubmitted && (
           <div className="mt-6 flex space-x-4">
-            <button
+            {/* <button
               onClick={handleSaveImage}
               className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
             >
               画像として保存
-            </button>
+            </button> */}
             <button
               onClick={handleBackToForm}
               className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
