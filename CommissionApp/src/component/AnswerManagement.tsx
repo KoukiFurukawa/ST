@@ -97,11 +97,11 @@ function AnswerManagement() {
         <div className="flex-1 p-8">
             <h1 className="text-2xl font-bold mb-6">回答管理</h1>
 
-            { forms.length === 0 ? (
-                <p className="text-gray-500">利用可能なフォームはありません。</p>
+            { forms.filter(form => form.open).length === 0 ? (
+                <p className="text-gray-500">利用可能な公開フォームはありません。</p>
             ) : (
                 <div className="space-y-6">
-                    {forms.map(form => (
+                    {forms.filter(form => form.open).map(form => (
                         <div key={form.id} className="p-4 border border-gray-300 rounded-lg shadow">
                             <div className="flex justify-between items-center mb-3">
                                 <h3 className="text-xl font-semibold text-gray-800">{form.title}</h3>
