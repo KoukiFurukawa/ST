@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { FormTemplate } from '@/lib/interfaces';
 import Swal from 'sweetalert2';
 import { handleSubmit } from '@/lib/request_azure';
+import QRCode from "qrcode"; // QRコード生成ライブラリをインポート
 
 // In a real application, this would be stored in a database
 const FormManager = () => {
@@ -132,7 +133,7 @@ const FormManager = () => {
         }
     };
 
-    const handleOpenForm = async (formId: string) => {
+   const handleOpenForm = async (formId: string) => {
         const formToOpen = forms.find(form => form.id === formId);
         if (!formToOpen) return;
         
@@ -155,19 +156,41 @@ const FormManager = () => {
                 }
             });
 
-            // Simulate API call to open the form
+            // バックエンドに公開状態を送信
             await handleSubmit({ ...formToOpen, open: true });
 
+            // ★★★ ここからQRコード生成・ダウンロード処理 ★★★
+            try {
+                const url = `${window.location.origin}/answer/${formId}`;
+                const qrDataURL = await QRCode.toDataURL(url, { width: 300, margin: 2, errorCorrectionLevel: 'H' });
+                
+                // ダウンロード用のリンクを生成して実行
+                const link = document.createElement('a');
+                link.href = qrDataURL;
+                link.download = `form-qrcode-${formId}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+            } catch (err) {
+                console.error("QRコードの生成に失敗しました:", err);
+                // QRコード作成に失敗しても公開処理は成功しているため、警告に留める
+                Swal.fire('QR生成エラー', 'QRコードの作成には失敗しましたが、フォームの公開は完了しました。', 'warning');
+            }
+            // ★★★ QRコード処理ここまで ★★★
+
+            // フロントエンドの状態を更新
             const updatedForms = forms.map(form => 
                 form.id === formId ? { ...form, open: true } : form
             );
             setForms(updatedForms);
             setSelectedFormDetails({ ...formToOpen, open: true });
 
+            // 最終的な成功メッセージ
             Swal.fire({
                 icon: 'success',
                 title: '成功',
-                text: 'フォームが正常に公開されました。',
+                text: 'フォームが正常に公開され、QRコードがダウンロードされました。',
             });
 
         } catch (error) {
@@ -179,7 +202,7 @@ const FormManager = () => {
             });
         }
     };
-
+    
     const handleSaveForm = async () => {
         if (!editFormData) return;
 
