@@ -132,6 +132,54 @@ const FormManager = () => {
         }
     };
 
+    const handleOpenForm = async (formId: string) => {
+        const formToOpen = forms.find(form => form.id === formId);
+        if (!formToOpen) return;
+        
+        if (formToOpen.open) {
+            Swal.fire({
+                icon: 'info',
+                title: '情報',
+                text: 'このフォームはすでに公開されています。',
+            });
+            return;
+        }
+
+        try {
+            Swal.fire({
+                title: '処理中...',
+                text: 'フォームを公開しています。',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            // Simulate API call to open the form
+            await handleSubmit({ ...formToOpen, open: true });
+
+            const updatedForms = forms.map(form => 
+                form.id === formId ? { ...form, open: true } : form
+            );
+            setForms(updatedForms);
+            setSelectedFormDetails({ ...formToOpen, open: true });
+
+            Swal.fire({
+                icon: 'success',
+                title: '成功',
+                text: 'フォームが正常に公開されました。',
+            });
+
+        } catch (error) {
+            console.error("Form open error:", error);
+            Swal.fire({
+                icon: 'error',
+                title: '公開エラー',
+                text: 'フォームの公開中にエラーが発生しました。',
+            });
+        }
+    };
+
     const handleSaveForm = async () => {
         if (!editFormData) return;
 
@@ -197,10 +245,10 @@ const FormManager = () => {
                                     <h4 className="text-lg font-medium">{form.title}</h4>
                                     <div className="flex space-x-2">
                                         <button
-                                            onClick={() => copyToClipboard(form.id)}
+                                            onClick={() => handleOpenForm(form.id)}
                                             className="bg-blue-600 hover:bg-blue-700 text-white py-1 px-3 rounded text-sm"
                                         >
-                                            {copied === form.id ? 'コピー済み' : 'URLをコピー'}
+                                            {form.open === true ? '公開済み' : '公開する'}
                                         </button>
                                         <button
                                             onClick={() => handleShowDetails(form)}
@@ -217,31 +265,33 @@ const FormManager = () => {
                                     <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-md">
                                         <div className="flex justify-between items-center mb-2">
                                             <h5 className="text-md font-semibold text-gray-800">フォーム詳細:</h5>
-                                            <div className="flex space-x-2">
-                                                {editingFormId === form.id ? (
-                                                    <>
+                                            { form.open === false && 
+                                                <div className="flex space-x-2">
+                                                    {editingFormId === form.id ? (
+                                                        <>
+                                                            <button
+                                                                onClick={handleSaveForm}
+                                                                className="bg-green-600 hover:bg-green-700 text-white py-1 px-3 rounded text-sm"
+                                                            >
+                                                                保存
+                                                            </button>
+                                                            <button
+                                                                onClick={handleCancelEdit}
+                                                                className="bg-gray-600 hover:bg-gray-700 text-white py-1 px-3 rounded text-sm"
+                                                            >
+                                                                キャンセル
+                                                            </button>
+                                                        </>
+                                                    ) : (
                                                         <button
-                                                            onClick={handleSaveForm}
-                                                            className="bg-green-600 hover:bg-green-700 text-white py-1 px-3 rounded text-sm"
+                                                            onClick={() => handleEditForm(form)}
+                                                            className="bg-yellow-600 hover:bg-yellow-700 text-white py-1 px-3 rounded text-sm"
                                                         >
-                                                            保存
+                                                            編集
                                                         </button>
-                                                        <button
-                                                            onClick={handleCancelEdit}
-                                                            className="bg-gray-600 hover:bg-gray-700 text-white py-1 px-3 rounded text-sm"
-                                                        >
-                                                            キャンセル
-                                                        </button>
-                                                    </>
-                                                ) : (
-                                                    <button
-                                                        onClick={() => handleEditForm(form)}
-                                                        className="bg-yellow-600 hover:bg-yellow-700 text-white py-1 px-3 rounded text-sm"
-                                                    >
-                                                        編集
-                                                    </button>
-                                                )}
-                                            </div>
+                                                    )}
+                                                </div>
+                                                }
                                         </div>
                                         <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-sm">
                                             <div>
