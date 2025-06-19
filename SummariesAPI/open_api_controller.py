@@ -17,14 +17,14 @@ def initialize_client():
     return client, deployment
 
 # チャットプロンプトをを準備する 
-def create_chat_prompt(text, length =50):
+def create_chat_prompt(text, length =200):
     chat_prompt = [
         {
             "role": "system",
             "content": [
                 {
                     "type": "text",
-                    "text": "情報を見つけるのに役立つ AI アシスタントです。"
+                    "text": "情報をまとめるのを得意なAIアシスタントです。"
                 }
             ]
         },
