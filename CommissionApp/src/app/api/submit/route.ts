@@ -25,6 +25,18 @@ export async function POST(req: NextRequest) {
             );
         }
 
+        // Fetchのみ実行
+        fetch("http://localhost:8080/message", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body : JSON.stringify({
+                message: "新しい委任状が公開されました",
+                channel_id: "1329621965945700385"
+            })
+        })
+
         const responseData = await externalResponse.json();
         return NextResponse.json(responseData);
     } catch (error) {

@@ -133,7 +133,7 @@ const FormManager = () => {
         }
     };
 
-   const handleOpenForm = async (formId: string) => {
+    const handleOpenForm = async (formId: string) => {
         const formToOpen = forms.find(form => form.id === formId);
         if (!formToOpen) return;
         
