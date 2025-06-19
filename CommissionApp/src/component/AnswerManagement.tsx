@@ -84,6 +84,52 @@ function AnswerManagement() {
         return answers.filter(answer => answer.commissionID === formId);
     };
 
+    // Helper function to format answer content with Japanese field labels
+    const formatAnswerContent = (content: string) => {
+        try {
+            // Try to parse as JSON
+            const parsedJson = JSON.parse(content);
+            
+            // Define field mappings to Japanese labels
+            const fieldMappings: Record<string, string> = {
+                recipientName: "受任者名",
+                recipientAddress: "受任者住所",
+                grantorName: "委任者名",
+                grantorAddress: "委任者住所",
+                submittedAt: "提出日時"
+                // formTitle and formDescription are intentionally omitted
+            };
+            
+            return (
+                <div className="bg-gray-100 p-2 rounded">
+                    {Object.entries(parsedJson).map(([key, value], index) => {
+                        // Skip fields that don't need to be displayed
+                        if (key === 'formTitle' || key === 'formDescription') return null;
+                        
+                        const label = fieldMappings[key] || key;
+                        let displayValue = value;
+                        
+                        // Format date fields
+                        if (key === 'submittedAt' && typeof value === 'string') {
+                            const date = new Date(value);
+                            displayValue = date.toLocaleString('ja-JP');
+                        }
+                        
+                        return (
+                            <div key={index} className="mb-1">
+                                <span className="font-semibold">{label}:</span>{' '}
+                                <span>{typeof displayValue === 'object' ? JSON.stringify(displayValue) : String(displayValue)}</span>
+                            </div>
+                        );
+                    })}
+                </div>
+            );
+        } catch (e) {
+            // Not valid JSON, return as is
+            return content;
+        }
+    };
+
     if (isLoading) {
         return (
             <div className="flex-1 p-8">
@@ -97,11 +143,11 @@ function AnswerManagement() {
         <div className="flex-1 p-8">
             <h1 className="text-2xl font-bold mb-6">回答管理</h1>
 
-            { forms.length === 0 ? (
-                <p className="text-gray-500">利用可能なフォームはありません。</p>
+            { forms.filter(form => form.open).length === 0 ? (
+                <p className="text-gray-500">利用可能な公開フォームはありません。</p>
             ) : (
                 <div className="space-y-6">
-                    {forms.map(form => (
+                    {forms.filter(form => form.open).map(form => (
                         <div key={form.id} className="p-4 border border-gray-300 rounded-lg shadow">
                             <div className="flex justify-between items-center mb-3">
                                 <h3 className="text-xl font-semibold text-gray-800">{form.title}</h3>
@@ -154,7 +200,10 @@ function AnswerManagement() {
                                                 <li key={answer.id} className="p-2 border-b border-gray-200 text-sm">
                                                     <p><span className="font-medium text-gray-600">回答者ID:</span> {answer.userId}</p>
                                                     <p><span className="font-medium text-gray-600">回答日時:</span> {new Date(answer.created_at).toLocaleString()}</p>
-                                                    <p className="mt-1 whitespace-pre-wrap"><span className="font-medium text-gray-600">内容:</span> {answer.answer}</p>
+                                                    <div className="mt-1">
+                                                        <span className="font-medium text-gray-600">内容:</span>{' '}
+                                                        {formatAnswerContent(answer.answer)}
+                                                    </div>
                                                 </li>
                                             ))}
                                         </ul>

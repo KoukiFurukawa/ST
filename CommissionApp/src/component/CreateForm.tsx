@@ -4,6 +4,8 @@ import Swal from 'sweetalert2'; // Import SweetAlert2
 import { FormTemplate } from '@/lib/interfaces';
 import { FORMS_KEY } from '@/lib/constants';
 
+import { handleSubmit } from '@/lib/request_azure'; // Import the handleSubmit function
+
 const CreateForm = () => {
 
     const [isClient, setIsClient] = useState(false);
@@ -38,19 +40,6 @@ const CreateForm = () => {
         ...prev,
         [name]: value
         }));
-    };
-
-    const handleSubmit = async (data: FormTemplate) => {
-        const res = await fetch('/api/submit/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            }, 
-            body: JSON.stringify(data)
-        });
-
-        const result = await res.json();
-        console.log(result);
     };
 
     const createNewForm = async (e: React.FormEvent) => {

@@ -3,16 +3,20 @@
 import React, { useState, useEffect } from 'react';
 import { FormTemplate } from '@/lib/interfaces';
 import Swal from 'sweetalert2';
+import { handleSubmit } from '@/lib/request_azure';
+import QRCode from "qrcode"; // QRコード生成ライブラリをインポート
 
 // In a real application, this would be stored in a database
 const FormManager = () => {
-
 
     // Important: Initialize with empty array to prevent hydration mismatch
     const [forms, setForms] = useState<FormTemplate[]>([]);
     const [copied, setCopied] = useState<string | null>(null);
     const [isClient, setIsClient] = useState(false);
     const [selectedFormDetails, setSelectedFormDetails] = useState<FormTemplate | null>(null);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [editingFormId, setEditingFormId] = useState<string | null>(null);
+    const [editFormData, setEditFormData] = useState<FormTemplate | null>(null);
 
     const handleFetchForms = async () => {
         try {
@@ -22,7 +26,6 @@ const FormManager = () => {
                 headers: {
                     'Content-Type': 'application/json', // Usually good practice for POST
                 },
-                // body: JSON.stringify({}), // Add body if your internal API route expects it
             });
 
             if (!internalResponse.ok) {
@@ -61,6 +64,7 @@ const FormManager = () => {
                 // e.g., createdAt: form.creation_date,
             }));
             setForms(mappedForms);
+            setIsLoading(false);
             return true;
         } catch (error: any) {
             Swal.fire({
@@ -93,10 +97,159 @@ const FormManager = () => {
     const handleShowDetails = (form: FormTemplate) => {
         if (selectedFormDetails && selectedFormDetails.id === form.id) {
             setSelectedFormDetails(null); // Hide if already shown
+            setEditingFormId(null); // Reset editing state
+            setEditFormData(null);
         } else {
             setSelectedFormDetails(form); // Show details
+            setEditingFormId(null); // Reset editing state
+            setEditFormData(null);
         }
     };
+
+    const handleEditForm = (form: FormTemplate) => {
+        if (form.open) {
+            Swal.fire({
+                icon: 'error',
+                title: '編集エラー',
+                text: '公開済みのフォームは編集できません。',
+            });
+            return;
+        }
+        setEditingFormId(form.id);
+        setEditFormData({ ...form }); // Create a copy for editing
+    };
+
+    const handleCancelEdit = () => {
+        setEditingFormId(null);
+        setEditFormData(null);
+    };
+
+    const handleInputChange = (field: keyof FormTemplate, value: string | boolean) => {
+        if (editFormData) {
+            setEditFormData({
+                ...editFormData,
+                [field]: value
+            });
+        }
+    };
+
+   const handleOpenForm = async (formId: string) => {
+        const formToOpen = forms.find(form => form.id === formId);
+        if (!formToOpen) return;
+        
+        if (formToOpen.open) {
+            Swal.fire({
+                icon: 'info',
+                title: '情報',
+                text: 'このフォームはすでに公開されています。',
+            });
+            return;
+        }
+
+        try {
+            Swal.fire({
+                title: '処理中...',
+                text: 'フォームを公開しています。',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            // バックエンドに公開状態を送信
+            await handleSubmit({ ...formToOpen, open: true });
+
+            // ★★★ ここからQRコード生成・ダウンロード処理 ★★★
+            try {
+                const url = `${window.location.origin}/answer/${formId}`;
+                const qrDataURL = await QRCode.toDataURL(url, { width: 300, margin: 2, errorCorrectionLevel: 'H' });
+                
+                // ダウンロード用のリンクを生成して実行
+                const link = document.createElement('a');
+                link.href = qrDataURL;
+                link.download = `form-qrcode-${formId}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+            } catch (err) {
+                console.error("QRコードの生成に失敗しました:", err);
+                // QRコード作成に失敗しても公開処理は成功しているため、警告に留める
+                Swal.fire('QR生成エラー', 'QRコードの作成には失敗しましたが、フォームの公開は完了しました。', 'warning');
+            }
+            // ★★★ QRコード処理ここまで ★★★
+
+            // フロントエンドの状態を更新
+            const updatedForms = forms.map(form => 
+                form.id === formId ? { ...form, open: true } : form
+            );
+            setForms(updatedForms);
+            setSelectedFormDetails({ ...formToOpen, open: true });
+
+            // 最終的な成功メッセージ
+            Swal.fire({
+                icon: 'success',
+                title: '成功',
+                text: 'フォームが正常に公開され、QRコードがダウンロードされました。',
+            });
+
+        } catch (error) {
+            console.error("Form open error:", error);
+            Swal.fire({
+                icon: 'error',
+                title: '公開エラー',
+                text: 'フォームの公開中にエラーが発生しました。',
+            });
+        }
+    };
+    
+    const handleSaveForm = async () => {
+        if (!editFormData) return;
+
+        try {
+            Swal.fire({
+                title: '処理中...',
+                text: 'フォームを更新しています。',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            await handleSubmit(editFormData);
+
+            const updatedForms = forms.map(form => 
+                form.id === editFormData.id ? editFormData : form
+            );
+            setForms(updatedForms);
+            setSelectedFormDetails(editFormData);
+            setEditingFormId(null);
+            setEditFormData(null);
+
+            Swal.fire({
+                icon: 'success',
+                title: '成功',
+                text: 'フォームが正常に更新されました。',
+            });
+
+        } catch (error) {
+            console.error("Form update error:", error);
+            Swal.fire({
+                icon: 'error',
+                title: '更新エラー',
+                text: 'フォームの更新中にエラーが発生しました。',
+            });
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <div className="flex-1 p-8">
+                <h1 className="text-2xl font-bold mb-6">フォーム管理</h1>
+                <p>データを読み込み中です...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="flex-1 p-8">
@@ -115,10 +268,10 @@ const FormManager = () => {
                                     <h4 className="text-lg font-medium">{form.title}</h4>
                                     <div className="flex space-x-2">
                                         <button
-                                            onClick={() => copyToClipboard(form.id)}
+                                            onClick={() => handleOpenForm(form.id)}
                                             className="bg-blue-600 hover:bg-blue-700 text-white py-1 px-3 rounded text-sm"
                                         >
-                                            {copied === form.id ? 'コピー済み' : 'URLをコピー'}
+                                            {form.open === true ? '公開済み' : '公開する'}
                                         </button>
                                         <button
                                             onClick={() => handleShowDetails(form)}
@@ -133,7 +286,36 @@ const FormManager = () => {
                                 </p>
                                 {selectedFormDetails && selectedFormDetails.id === form.id && (
                                     <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-md">
-                                        <h5 className="text-md font-semibold mb-2 text-gray-800">フォーム詳細:</h5>
+                                        <div className="flex justify-between items-center mb-2">
+                                            <h5 className="text-md font-semibold text-gray-800">フォーム詳細:</h5>
+                                            { form.open === false && 
+                                                <div className="flex space-x-2">
+                                                    {editingFormId === form.id ? (
+                                                        <>
+                                                            <button
+                                                                onClick={handleSaveForm}
+                                                                className="bg-green-600 hover:bg-green-700 text-white py-1 px-3 rounded text-sm"
+                                                            >
+                                                                保存
+                                                            </button>
+                                                            <button
+                                                                onClick={handleCancelEdit}
+                                                                className="bg-gray-600 hover:bg-gray-700 text-white py-1 px-3 rounded text-sm"
+                                                            >
+                                                                キャンセル
+                                                            </button>
+                                                        </>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => handleEditForm(form)}
+                                                            className="bg-yellow-600 hover:bg-yellow-700 text-white py-1 px-3 rounded text-sm"
+                                                        >
+                                                            編集
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                }
+                                        </div>
                                         <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-sm">
                                             <div>
                                                 <dt className="font-medium text-gray-500">ID:</dt>
@@ -141,19 +323,62 @@ const FormManager = () => {
                                             </div>
                                             <div>
                                                 <dt className="font-medium text-gray-500">タイトル:</dt>
-                                                <dd className="text-gray-900">{selectedFormDetails.title}</dd>
+                                                <dd className="text-gray-900">
+                                                    {editingFormId === form.id ? (
+                                                        <input
+                                                            type="text"
+                                                            value={editFormData?.title || ''}
+                                                            onChange={(e) => handleInputChange('title', e.target.value)}
+                                                            className="border border-gray-300 rounded px-2 py-1 w-full"
+                                                        />
+                                                    ) : (
+                                                        selectedFormDetails.title
+                                                    )}
+                                                </dd>
                                             </div>
                                             <div className="col-span-1 md:col-span-2">
                                                 <dt className="font-medium text-gray-500">説明:</dt>
-                                                <dd className="text-gray-900 whitespace-pre-wrap">{selectedFormDetails.description}</dd>
+                                                <dd className="text-gray-900">
+                                                    {editingFormId === form.id ? (
+                                                        <textarea
+                                                            value={editFormData?.description || ''}
+                                                            onChange={(e) => handleInputChange('description', e.target.value)}
+                                                            className="border border-gray-300 rounded px-2 py-1 w-full h-20 resize-y"
+                                                        />
+                                                    ) : (
+                                                        <span className="whitespace-pre-wrap">{selectedFormDetails.description}</span>
+                                                    )}
+                                                </dd>
                                             </div>
                                             <div>
                                                 <dt className="font-medium text-gray-500">受任者名 (デフォルト):</dt>
-                                                <dd className="text-gray-900">{selectedFormDetails.recipientName}</dd>
+                                                <dd className="text-gray-900">
+                                                    {editingFormId === form.id ? (
+                                                        <input
+                                                            type="text"
+                                                            value={editFormData?.recipientName || ''}
+                                                            onChange={(e) => handleInputChange('recipientName', e.target.value)}
+                                                            className="border border-gray-300 rounded px-2 py-1 w-full"
+                                                        />
+                                                    ) : (
+                                                        selectedFormDetails.recipientName
+                                                    )}
+                                                </dd>
                                             </div>
                                             <div>
                                                 <dt className="font-medium text-gray-500">受任者住所 (デフォルト):</dt>
-                                                <dd className="text-gray-900">{selectedFormDetails.recipientAddress}</dd>
+                                                <dd className="text-gray-900">
+                                                    {editingFormId === form.id ? (
+                                                        <input
+                                                            type="text"
+                                                            value={editFormData?.recipientAddress || ''}
+                                                            onChange={(e) => handleInputChange('recipientAddress', e.target.value)}
+                                                            className="border border-gray-300 rounded px-2 py-1 w-full"
+                                                        />
+                                                    ) : (
+                                                        selectedFormDetails.recipientAddress
+                                                    )}
+                                                </dd>
                                             </div>
                                             <div>
                                                 <dt className="font-medium text-gray-500">作成日時:</dt>
@@ -161,7 +386,9 @@ const FormManager = () => {
                                             </div>
                                             <div>
                                                 <dt className="font-medium text-gray-500">公開状態:</dt>
-                                                <dd className="text-gray-900">{selectedFormDetails.open ? '公開' : '非公開'}</dd>
+                                                <dd className="text-gray-900">
+                                                    {selectedFormDetails.open ? '公開' : '非公開'}
+                                                </dd>
                                             </div>
                                         </dl>
                                     </div>

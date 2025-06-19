@@ -28,9 +28,16 @@ export default function Home() {
   };
 
   return (
-    <div className="flex">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-      {renderContent()}
+    <div className="flex min-h-screen">
+      {/* Fixed sidebar */}
+      <div className="fixed top-0 left-0 h-screen">
+        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      </div>
+      
+      {/* Main content with left margin to account for sidebar */}
+      <div className="ml-64 flex-1 overflow-auto">
+        {renderContent()}
+      </div>
     </div>
   );
 }
