@@ -1,0 +1,20 @@
+{
+  "name": "st",
+  "version": "1.0.0",
+  "description": "地域共創ソリューションで開発、町内会の作業を効率化するための Discord Bot\u0000",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KoukiFurukawa/ST.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/KoukiFurukawa/ST/issues"
+  },
+  "homepage": "https://github.com/KoukiFurukawa/ST#readme"
+}

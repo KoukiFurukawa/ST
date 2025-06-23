@@ -30,3 +30,6 @@ go.work.sum
 
 __pycache__/
 .venv/
+
+build/
+dist/

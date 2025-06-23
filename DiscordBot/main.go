@@ -55,8 +55,9 @@ func main() {
 	commandHandler := botRouter.NewCommandHandler(discord, "")
 	// 追加したいコマンドをここに追加
 	commandHandler.CommandRegister(commands.PingCommand())
-	// commandHandler.CommandRegister(commands.RecordCommand())
-	// commandHandler.CommandRegister(commands.DisconnectCommand())
+	commandHandler.CommandRegister(commands.RecordCommand())
+	commandHandler.CommandRegister(commands.DisconnectCommand())
+
 	commandHandler.CommandRegister(commands.CrawlingTextCommand())
 	commandHandler.CommandRegister(commands.SummariesCommand())
 	commandHandlers = append(commandHandlers, commandHandler)

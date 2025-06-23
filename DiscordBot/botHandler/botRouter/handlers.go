@@ -1,4 +1,3 @@
-// handlers.go
 package botRouter
 
 import (
@@ -7,21 +6,13 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-/*
-スラッシュコマンドとハンドラの登録
-
-スラッシュコマンドとハンドラの登録は、
-discordgo.Session.ApplicationCommandCreate()と
-discordgo.Session.AddHandler()を使って行います。
-*/
-
 type Handler struct {
 	session  *discordgo.Session
 	commands map[string]*Command
 	guild    string
 }
 
-// ハンドラーの登録
+// ハンドラーの登録（未使用部分）
 func RegisterHandlers(s *discordgo.Session) {
 	fmt.Println(s.State.User.Username + "としてログインしました")
 	// s.AddHandler(botHandler.OnMessageCreate)
@@ -47,30 +38,28 @@ func (h *Handler) CommandRegister(command *Command) error {
 		h.session.State.User.ID,
 		h.guild,
 		&discordgo.ApplicationCommand{
-			//ID:            command.AppCommand.ID,
 			ApplicationID: h.session.State.User.ID,
-			//GuildID:       h.guild,
-			Name:        command.Name,
-			Description: command.Description,
-			Options:     command.Options,
+			Name:          command.Name,
+			Description:   command.Description,
+			Options:       command.Options,
 		},
 	)
-
 	if err != nil {
 		return err
 	}
 
 	command.AddApplicationCommand(appCmd)
-
 	h.commands[command.Name] = command
-	//fmt.Println(h.commands[command.Name])
 
+	// ✅ 修正点: コマンド名でExecutorをフィルタリング
 	h.session.AddHandler(
 		func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			command.Executor(s, i)
+			if i.Type == discordgo.InteractionApplicationCommand &&
+				i.ApplicationCommandData().Name == command.Name {
+				command.Executor(s, i)
+			}
 		},
 	)
-	//fmt.Println(h.session)
 
 	return nil
 }
@@ -81,19 +70,15 @@ func (h *Handler) CommandRemove(command *Command) error {
 	if err != nil {
 		return fmt.Errorf("error while deleting application command: %v", err)
 	}
-
 	delete(h.commands, command.Name)
-
 	return nil
 }
 
 // スラッシュコマンドの取得
 func (h *Handler) GetCommands() []*Command {
 	var commands []*Command
-
 	for _, v := range h.commands {
 		commands = append(commands, v)
 	}
-
 	return commands
 }

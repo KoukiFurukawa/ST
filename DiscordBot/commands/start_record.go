@@ -2,11 +2,15 @@ package commands
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"time"
 
-	"main/botHandler/botRouter"
-
 	"github.com/bwmarrin/discordgo"
+	"github.com/google/uuid"
+
+	"main/botHandler/botRouter"
 
 	"github.com/pion/rtp"
 	"github.com/pion/webrtc/v3/pkg/media"
@@ -14,13 +18,6 @@ import (
 )
 
 func RecordCommand() *botRouter.Command {
-	/*
-		start_recordコマンドの定義
-
-		コマンド名: start_record
-		説明: 録音を開始します
-		オプション: なし
-	*/
 	return &botRouter.Command{
 		Name:        "test_start_record",
 		Description: "録音を開始します",
@@ -29,12 +26,10 @@ func RecordCommand() *botRouter.Command {
 	}
 }
 
-// DiscordのパケットをPion RTPパケットに変換
 func createPionRTPPacket(p *discordgo.Packet) *rtp.Packet {
 	return &rtp.Packet{
 		Header: rtp.Header{
-			Version: 2,
-			// Discord voiceのドキュメントから取得
+			Version:        2,
 			PayloadType:    0x78,
 			SequenceNumber: p.Sequence,
 			Timestamp:      p.Timestamp,
@@ -44,61 +39,83 @@ func createPionRTPPacket(p *discordgo.Packet) *rtp.Packet {
 	}
 }
 
-// 音声データの取り扱い（保存）
 func handleVoice(c chan *discordgo.Packet) {
 	files := make(map[uint32]media.Writer)
-	for p := range c {
-		file, ok := files[p.SSRC]
-		if !ok {
-			// 新しいOGGファイルの作成
-			var err error
-			file, err = oggwriter.New(fmt.Sprintf("%d.ogg", p.SSRC), 48000, 2)
-			if err != nil {
-				fmt.Printf("failed to create file %d.ogg, giving up on recording: %v\n", p.SSRC, err)
-				return
-			}
-			files[p.SSRC] = file
-		}
-		// DiscordGoの型からpion RTPパケットを構築
-		rtp := createPionRTPPacket(p)
-		err := file.WriteRTP(rtp)
-		if err != nil {
-			fmt.Printf("failed to write to file %d.ogg, giving up on recording: %v\n", p.SSRC, err)
+	filePaths := make(map[uint32]string)
+
+	// 保存先の絶対パス
+	storageDir := "C:\\Users\\yoshi\\OneDrive\\ドキュメント\\st\\DiscordBot\\commands\\vc_storage"
+
+	// ディレクトリが存在しなければ作成
+	if _, err := os.Stat(storageDir); os.IsNotExist(err) {
+		if err := os.MkdirAll(storageDir, os.ModePerm); err != nil {
+			fmt.Printf("failed to create vc_storage directory: %v\n", err)
+			return
 		}
 	}
 
-	// パケットの受信が終了したら全てのファイルを閉じる
-	// これにより切断されても音声データが保存される
-	for _, f := range files {
+	for p := range c {
+		file, ok := files[p.SSRC]
+		if !ok {
+			id := uuid.New()
+			fileName := filepath.Join(storageDir, fmt.Sprintf("%s.ogg", id.String()))
+
+			var err error
+			file, err = oggwriter.New(fileName, 48000, 2)
+			if err != nil {
+				fmt.Printf("failed to create file %s, giving up on recording: %v\n", fileName, err)
+				return
+			}
+			files[p.SSRC] = file
+			filePaths[p.SSRC] = fileName
+			fmt.Printf("recording started: %s\n", fileName)
+		}
+
+		rtp := createPionRTPPacket(p)
+		err := file.WriteRTP(rtp)
+		if err != nil {
+			fmt.Printf("failed to write to file for SSRC %d: %v\n", p.SSRC, err)
+		}
+	}
+
+	for ssrc, f := range files {
 		f.Close()
+		filePath := filePaths[ssrc]
+		transcribeAudio(filePath)
+	}
+}
+
+func transcribeAudio(filePath string) {
+	// Pythonとtranscribe.pyの絶対パスを指定
+	scriptPath, _ := filepath.Abs("./scripts/dist/transcribe.exe")
+	filePath2, _ := filepath.Abs("./commands/vc_storage/7717895a-1dd7-4e77-9e27-baee5bf98110.ogg")
+
+	fmt.Printf("Running transcription on: %s\n", filePath2)
+
+	cmd := exec.Command(scriptPath, filePath)
+	out, err := cmd.CombinedOutput()
+
+	fmt.Printf("---- Transcribe Output ----\n%s\n", string(out))
+	if err != nil {
+		fmt.Printf("transcription error: %v\n", err)
 	}
 }
 
 func recordVoice(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	/*
-		録音の開始
-
-		コマンドの実行結果を返す
-	*/
 	if i.Interaction.ApplicationCommandData().Name == "test_start_record" {
 		vs, err := s.State.VoiceState(i.GuildID, i.Interaction.Member.User.ID)
-		if err != nil {
-			fmt.Println("failed to find voice state:", err)
+		if err != nil || vs == nil {
 			responsText(s, i, "ボイスチャンネルに接続していません")
 			return
 		}
-		if vs == nil {
-			responsText(s, i, "ボイスチャンネルに接続していません")
-			return
-		}
+
 		responsText(s, i, "録音を開始します <#"+vs.ChannelID+">")
 		v, err := s.ChannelVoiceJoin(i.GuildID, vs.ChannelID, true, false)
-		//fmt.Println(v)
 		if err != nil {
-			fmt.Println("failed to join voice channel:", err)
 			responsText(s, i, "ボイスチャンネルに入ってください")
 			return
 		}
+
 		go func() {
 			time.Sleep(10 * time.Second)
 			close(v.OpusRecv)
@@ -117,7 +134,6 @@ func responsText(s *discordgo.Session, i *discordgo.InteractionCreate, contentTe
 	})
 	if err != nil {
 		fmt.Printf("error responding to record command: %v\n", err)
-		return err
 	}
-	return nil
+	return err
 }
