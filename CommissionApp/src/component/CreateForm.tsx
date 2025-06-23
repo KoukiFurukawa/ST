@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import { v4 as uuidv4 } from 'uuid';
+import Swal from 'sweetalert2'; // Import SweetAlert2
 import { FormTemplate } from '@/lib/interfaces';
 import { FORMS_KEY } from '@/lib/constants';
+
+import { handleSubmit } from '@/lib/request_azure'; // Import the handleSubmit function
 
 const CreateForm = () => {
 
@@ -25,9 +28,8 @@ const CreateForm = () => {
         description: '',
         recipientName: '',
         recipientAddress: '',
-        grantorName: '',
-        grantorAddress: '',
-        createdAt: Date.now()
+        created_at: Date.now(),
+        open: false
     });
 
     const handleInputChange = (
@@ -40,33 +42,71 @@ const CreateForm = () => {
         }));
     };
 
-    const createNewForm = (e: React.FormEvent) => {
+    const createNewForm = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Input validation
+        if (!formData.title || !formData.recipientName || !formData.recipientAddress || !formData.description) {
+            Swal.fire({
+                icon: 'error',
+                title: '入力エラー',
+                text: 'すべての必須項目を入力してください。',
+            });
+            return;
+        }
+
+        Swal.fire({
+            title: '処理中...',
+            text: 'フォームを送信しています。',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
         const newForm = {
             ...formData,
             id: uuidv4(),
-            createdAt: Date.now()
+            createdAt: Date.now(),
+            open: false // Default to closed
         };
         
-        const updatedForms = [...forms, newForm];
-        setForms(updatedForms);
-        
-        // Save to localStorage
-        if (typeof window !== 'undefined') {
-            localStorage.setItem(FORMS_KEY, JSON.stringify(updatedForms));
+        try {
+            await handleSubmit(newForm); // Assume handleSubmit might throw an error or return a status
+
+            const updatedForms = [...forms, newForm];
+            setForms(updatedForms);
+            
+            // Save to localStorage
+            if (typeof window !== 'undefined') {
+                localStorage.setItem(FORMS_KEY, JSON.stringify(updatedForms));
+            }
+
+            Swal.fire({
+                icon: 'success',
+                title: '成功',
+                text: 'フォームが正常に作成されました。',
+            });
+
+            // Reset form
+            setFormData({
+                id: '',
+                title: '委任状',
+                description: '',
+                recipientName: '',
+                recipientAddress: '',
+                created_at: Date.now(),
+                open: false
+            });
+
+        } catch (error) {
+            console.error("Form submission error:", error);
+            Swal.fire({
+                icon: 'error',
+                title: '送信エラー',
+                text: 'フォームの送信中にエラーが発生しました。',
+            });
         }
-        
-        // Reset form
-        setFormData({
-            id: '',
-            title: '委任状',
-            description: '',
-            recipientName: '',
-            recipientAddress: '',
-            grantorName: '',
-            grantorAddress: '',
-            createdAt: Date.now()
-        });
         
     };
 
@@ -111,8 +151,8 @@ const CreateForm = () => {
                 <div className="mb-4">
                     <label className="block mb-2">内容:</label>
                     <textarea
-                        name="recipientAddress"
-                        value={formData.recipientAddress}
+                        name="description"
+                        value={formData.description}
                         onChange={handleInputChange}
                         className="border p-2 w-full h-32 resize-y"
                         rows={4}

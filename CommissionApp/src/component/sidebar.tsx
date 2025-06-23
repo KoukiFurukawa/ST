@@ -11,8 +11,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
   const tabs = [
     { id: 'create', label: '委任状作成' },
     { id: 'forms', label: 'フォーム管理' },
-    { id: 'pending', label: '保留中' },
-    { id: 'shared', label: '共有済み' },
+    { id: 'answer-management', label: '回答管理' },
+    { id: 'answer-analysis', label: '回答分析' },
   ];
 
   return (
