@@ -43,8 +43,8 @@ func handleVoice(c chan *discordgo.Packet) {
 	files := make(map[uint32]media.Writer)
 	filePaths := make(map[uint32]string)
 
-	// 保存先の絶対パス
-	storageDir := "./commands/vc_storage"
+	// 相対パスに変更
+	storageDir := filepath.Join("commands", "vc_storage")
 
 	// ディレクトリが存在しなければ作成
 	if _, err := os.Stat(storageDir); os.IsNotExist(err) {
