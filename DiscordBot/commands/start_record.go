@@ -44,7 +44,7 @@ func handleVoice(c chan *discordgo.Packet) {
 	filePaths := make(map[uint32]string)
 
 	// 保存先の絶対パス
-	storageDir := "C:\\Users\\yoshi\\OneDrive\\ドキュメント\\st\\DiscordBot\\commands\\vc_storage"
+	storageDir := "./commands/vc_storage"
 
 	// ディレクトリが存在しなければ作成
 	if _, err := os.Stat(storageDir); os.IsNotExist(err) {
@@ -88,9 +88,8 @@ func handleVoice(c chan *discordgo.Packet) {
 func transcribeAudio(filePath string) {
 	// Pythonとtranscribe.pyの絶対パスを指定
 	scriptPath, _ := filepath.Abs("./scripts/dist/transcribe.exe")
-	filePath2, _ := filepath.Abs("./commands/vc_storage/7717895a-1dd7-4e77-9e27-baee5bf98110.ogg")
 
-	fmt.Printf("Running transcription on: %s\n", filePath2)
+	fmt.Printf("Running transcription on: %s\n", filePath)
 
 	cmd := exec.Command(scriptPath, filePath)
 	out, err := cmd.CombinedOutput()

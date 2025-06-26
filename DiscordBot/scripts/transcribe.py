@@ -21,6 +21,9 @@ def main():
         print(result["text"])
     except Exception as e:
         print(f"Whisper transcription failed: {e}")
+        print(f"Error type: {type(e).__name__}")
+        import traceback
+        traceback.print_exc()
 
 if __name__ == "__main__":
     main()
