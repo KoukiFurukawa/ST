@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 
 	"main/botHandler/botRouter"
+	"main/service"
 
 	"github.com/pion/rtp"
 	"github.com/pion/webrtc/v3/pkg/media"
@@ -39,7 +40,7 @@ func createPionRTPPacket(p *discordgo.Packet) *rtp.Packet {
 	}
 }
 
-func handleVoice(c chan *discordgo.Packet) {
+func handleVoice(c chan *discordgo.Packet) string {
 	files := make(map[uint32]media.Writer)
 	filePaths := make(map[uint32]string)
 
@@ -50,7 +51,7 @@ func handleVoice(c chan *discordgo.Packet) {
 	if _, err := os.Stat(storageDir); os.IsNotExist(err) {
 		if err := os.MkdirAll(storageDir, os.ModePerm); err != nil {
 			fmt.Printf("failed to create vc_storage directory: %v\n", err)
-			return
+			return ""
 		}
 	}
 
@@ -64,7 +65,7 @@ func handleVoice(c chan *discordgo.Packet) {
 			file, err = oggwriter.New(fileName, 48000, 2)
 			if err != nil {
 				fmt.Printf("failed to create file %s, giving up on recording: %v\n", fileName, err)
-				return
+				return ""
 			}
 			files[p.SSRC] = file
 			filePaths[p.SSRC] = fileName
@@ -81,11 +82,12 @@ func handleVoice(c chan *discordgo.Packet) {
 	for ssrc, f := range files {
 		f.Close()
 		filePath := filePaths[ssrc]
-		transcribeAudio(filePath)
+		return transcribeAudio(filePath)
 	}
+	return ""
 }
 
-func transcribeAudio(filePath string) {
+func transcribeAudio(filePath string) string {
 	// Pythonとtranscribe.pyの絶対パスを指定
 	scriptPath, _ := filepath.Abs("./scripts/dist/transcribe.exe")
 
@@ -98,6 +100,8 @@ func transcribeAudio(filePath string) {
 	if err != nil {
 		fmt.Printf("transcription error: %v\n", err)
 	}
+
+	return string(out)
 }
 
 func recordVoice(s *discordgo.Session, i *discordgo.InteractionCreate) {
@@ -120,7 +124,18 @@ func recordVoice(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			close(v.OpusRecv)
 			v.Close()
 		}()
-		handleVoice(v.OpusRecv)
+		result := handleVoice(v.OpusRecv)
+
+		// Create a MessageService instance
+		messageService := service.NewMessageService(s)
+		channelId := "1387679644001505400"
+		if result == "" {
+			// Handle empty result
+			messageService.SendMessage(channelId, "録音の書き起こしができませんでした。")
+		} else {
+			// Send the transcription result
+			messageService.SendMessage(channelId, "書き起こし結果:\n```\n"+result+"\n```")
+		}
 	}
 }
 
