@@ -170,7 +170,11 @@ function AnswerAnalysis() {
                                 margin={{ top: 5, right: 30, left: 80, bottom: 5 }}
                             >
                                 <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis type="number" label={{ value: '委任件数', position: 'insideBottom', offset: -5 }} />
+                                <XAxis 
+                                    type="number" 
+                                    label={{ value: '委任件数', position: 'insideBottom', offset: -5 }} 
+                                    allowDecimals={false} // 追加: 整数のみ表示
+                                />
                                 <YAxis 
                                     type="category"
                                     dataKey="name" 
@@ -206,7 +210,10 @@ function AnswerAnalysis() {
                                         margin={{ top: 5, right: 30, left: 80, bottom: 5 }}
                                     >
                                         <CartesianGrid strokeDasharray="3 3" />
-                                        <XAxis type="number" />
+                                        <XAxis 
+                                            type="number"
+                                            allowDecimals={false} // 追加: 整数のみ表示
+                                        />
                                         <YAxis 
                                             type="category"
                                             dataKey="name" 
