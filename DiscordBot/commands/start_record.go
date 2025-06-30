@@ -104,14 +104,14 @@ func recordVoice(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	if i.Interaction.ApplicationCommandData().Name == "test_start_record" {
 		vs, err := s.State.VoiceState(i.GuildID, i.Interaction.Member.User.ID)
 		if err != nil || vs == nil {
-			responsText(s, i, "ボイスチャンネルに接続していません")
+			responseText(s, i, "ボイスチャンネルに接続していません")
 			return
 		}
 
-		responsText(s, i, "録音を開始します <#"+vs.ChannelID+">")
+		responseText(s, i, "録音を開始します <#"+vs.ChannelID+">")
 		v, err := s.ChannelVoiceJoin(i.GuildID, vs.ChannelID, true, false)
 		if err != nil {
-			responsText(s, i, "ボイスチャンネルに入ってください")
+			responseText(s, i, "ボイスチャンネルに入ってください")
 			return
 		}
 
@@ -124,7 +124,7 @@ func recordVoice(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	}
 }
 
-func responsText(s *discordgo.Session, i *discordgo.InteractionCreate, contentText string) error {
+func responseText(s *discordgo.Session, i *discordgo.InteractionCreate, contentText string) error {
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{

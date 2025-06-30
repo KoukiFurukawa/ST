@@ -30,11 +30,11 @@ func disconnectVoiceChannel(s *discordgo.Session, i *discordgo.InteractionCreate
 	*/
 	if i.Interaction.ApplicationCommandData().Name == "test_disconnect" {
 		if len(s.VoiceConnections) == 0 {
-			responsText(s, i, "ボイスチャンネルに接続していません")
+			responseText(s, i, "ボイスチャンネルに接続していません")
 			return
 		}
 		if s.VoiceConnections[i.GuildID] == nil {
-			responsText(s, i, "ボイスチャンネルに接続していません")
+			responseText(s, i, "ボイスチャンネルに接続していません")
 			return
 		}
 		// 接続中のボイスチャンネルから切断する
@@ -48,6 +48,6 @@ func disconnectVoiceChannel(s *discordgo.Session, i *discordgo.InteractionCreate
 			})
 			return
 		}
-		responsText(s, i, "切断しました")
+		responseText(s, i, "切断しました")
 	}
 }
