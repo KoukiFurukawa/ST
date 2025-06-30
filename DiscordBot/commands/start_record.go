@@ -19,7 +19,7 @@ import (
 
 func RecordCommand() *botRouter.Command {
 	return &botRouter.Command{
-		Name:        "test_start_record",
+		Name:        "start_record",
 		Description: "録音を開始します",
 		Options:     []*discordgo.ApplicationCommandOption{},
 		Executor:    recordVoice,
@@ -101,7 +101,7 @@ func transcribeAudio(filePath string) {
 }
 
 func recordVoice(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	if i.Interaction.ApplicationCommandData().Name == "test_start_record" {
+	if i.Interaction.ApplicationCommandData().Name == "start_record" {
 		vs, err := s.State.VoiceState(i.GuildID, i.Interaction.Member.User.ID)
 		if err != nil || vs == nil {
 			responseText(s, i, "ボイスチャンネルに接続していません")
