@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
@@ -124,7 +125,9 @@ func recordVoice(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			close(v.OpusRecv)
 			v.Close()
 		}()
+
 		result := handleVoice(v.OpusRecv)
+		outputText := strings.Split(result, "\n")[2]
 
 		// Create a MessageService instance
 		messageService := service.NewMessageService(s)
@@ -134,7 +137,7 @@ func recordVoice(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			messageService.SendMessage(channelId, "録音の書き起こしができませんでした。")
 		} else {
 			// Send the transcription result
-			messageService.SendMessage(channelId, "書き起こし結果:\n```\n"+result+"\n```")
+			messageService.SendMessage(channelId, "書き起こし結果:\n```\n"+outputText+"\n```")
 		}
 	}
 }
