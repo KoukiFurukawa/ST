@@ -5,12 +5,14 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/google/uuid"
 
 	"main/botHandler/botRouter"
+	"main/service"
 
 	"github.com/pion/rtp"
 	"github.com/pion/webrtc/v3/pkg/media"
@@ -19,7 +21,7 @@ import (
 
 func RecordCommand() *botRouter.Command {
 	return &botRouter.Command{
-		Name:        "test_start_record",
+		Name:        "start_record",
 		Description: "録音を開始します",
 		Options:     []*discordgo.ApplicationCommandOption{},
 		Executor:    recordVoice,
@@ -39,7 +41,7 @@ func createPionRTPPacket(p *discordgo.Packet) *rtp.Packet {
 	}
 }
 
-func handleVoice(c chan *discordgo.Packet) {
+func handleVoice(c chan *discordgo.Packet) string {
 	files := make(map[uint32]media.Writer)
 	filePaths := make(map[uint32]string)
 
@@ -50,7 +52,7 @@ func handleVoice(c chan *discordgo.Packet) {
 	if _, err := os.Stat(storageDir); os.IsNotExist(err) {
 		if err := os.MkdirAll(storageDir, os.ModePerm); err != nil {
 			fmt.Printf("failed to create vc_storage directory: %v\n", err)
-			return
+			return ""
 		}
 	}
 
@@ -64,7 +66,7 @@ func handleVoice(c chan *discordgo.Packet) {
 			file, err = oggwriter.New(fileName, 48000, 2)
 			if err != nil {
 				fmt.Printf("failed to create file %s, giving up on recording: %v\n", fileName, err)
-				return
+				return ""
 			}
 			files[p.SSRC] = file
 			filePaths[p.SSRC] = fileName
@@ -81,11 +83,12 @@ func handleVoice(c chan *discordgo.Packet) {
 	for ssrc, f := range files {
 		f.Close()
 		filePath := filePaths[ssrc]
-		transcribeAudio(filePath)
+		return transcribeAudio(filePath)
 	}
+	return ""
 }
 
-func transcribeAudio(filePath string) {
+func transcribeAudio(filePath string) string {
 	// Pythonとtranscribe.pyの絶対パスを指定
 	scriptPath, _ := filepath.Abs("./scripts/dist/transcribe.exe")
 
@@ -98,20 +101,22 @@ func transcribeAudio(filePath string) {
 	if err != nil {
 		fmt.Printf("transcription error: %v\n", err)
 	}
+
+	return string(out)
 }
 
 func recordVoice(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	if i.Interaction.ApplicationCommandData().Name == "test_start_record" {
+	if i.Interaction.ApplicationCommandData().Name == "start_record" {
 		vs, err := s.State.VoiceState(i.GuildID, i.Interaction.Member.User.ID)
 		if err != nil || vs == nil {
-			responsText(s, i, "ボイスチャンネルに接続していません")
+			responseText(s, i, "ボイスチャンネルに接続していません")
 			return
 		}
 
-		responsText(s, i, "録音を開始します <#"+vs.ChannelID+">")
+		responseText(s, i, "録音を開始します <#"+vs.ChannelID+">")
 		v, err := s.ChannelVoiceJoin(i.GuildID, vs.ChannelID, true, false)
 		if err != nil {
-			responsText(s, i, "ボイスチャンネルに入ってください")
+			responseText(s, i, "ボイスチャンネルに入ってください")
 			return
 		}
 
@@ -120,11 +125,24 @@ func recordVoice(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			close(v.OpusRecv)
 			v.Close()
 		}()
-		handleVoice(v.OpusRecv)
+
+		result := handleVoice(v.OpusRecv)
+		outputText := strings.Split(result, "\n")[2]
+
+		// Create a MessageService instance
+		messageService := service.NewMessageService(s)
+		channelId := "1387679644001505400"
+		if result == "" {
+			// Handle empty result
+			messageService.SendMessage(channelId, "録音の書き起こしができませんでした。")
+		} else {
+			// Send the transcription result
+			messageService.SendMessage(channelId, "書き起こし結果:\n```\n"+outputText+"\n```")
+		}
 	}
 }
 
-func responsText(s *discordgo.Session, i *discordgo.InteractionCreate, contentText string) error {
+func responseText(s *discordgo.Session, i *discordgo.InteractionCreate, contentText string) error {
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{

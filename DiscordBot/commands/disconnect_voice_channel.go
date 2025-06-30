@@ -15,7 +15,7 @@ func DisconnectCommand() *botRouter.Command {
 		オプション: なし
 	*/
 	return &botRouter.Command{
-		Name:        "test_disconnect",
+		Name:        "disconnect",
 		Description: "接続中のボイスチャンネルから切断します",
 		Options:     []*discordgo.ApplicationCommandOption{},
 		Executor:    disconnectVoiceChannel,
@@ -28,13 +28,13 @@ func disconnectVoiceChannel(s *discordgo.Session, i *discordgo.InteractionCreate
 
 		コマンドの実行結果を返す
 	*/
-	if i.Interaction.ApplicationCommandData().Name == "test_disconnect" {
+	if i.Interaction.ApplicationCommandData().Name == "disconnect" {
 		if len(s.VoiceConnections) == 0 {
-			responsText(s, i, "ボイスチャンネルに接続していません")
+			responseText(s, i, "ボイスチャンネルに接続していません")
 			return
 		}
 		if s.VoiceConnections[i.GuildID] == nil {
-			responsText(s, i, "ボイスチャンネルに接続していません")
+			responseText(s, i, "ボイスチャンネルに接続していません")
 			return
 		}
 		// 接続中のボイスチャンネルから切断する
@@ -48,6 +48,6 @@ func disconnectVoiceChannel(s *discordgo.Session, i *discordgo.InteractionCreate
 			})
 			return
 		}
-		responsText(s, i, "切断しました")
+		responseText(s, i, "切断しました")
 	}
 }
