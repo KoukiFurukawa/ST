@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
                 "Content-Type": "application/json",
             },
             body : JSON.stringify({
-                message: "新しい委任状が公開されました",
+                message: "新しい委任状が作成されました",
                 channel_id: "1329621965945700385"
             })
         })
