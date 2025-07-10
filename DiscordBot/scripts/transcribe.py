@@ -13,7 +13,7 @@ def main():
         print(f"File not found: {file_path}")
         return
 
-    model = whisper.load_model("base")  # small / medium / large も可
+    model = whisper.load_model("medium")  # small / medium / large も可
 
     try:
         result = model.transcribe(file_path)

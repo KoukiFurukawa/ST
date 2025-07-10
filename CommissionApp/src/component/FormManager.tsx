@@ -288,7 +288,7 @@ const FormManager = () => {
                                     <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-md">
                                         <div className="flex justify-between items-center mb-2">
                                             <h5 className="text-md font-semibold text-gray-800">フォーム詳細:</h5>
-                                            { form.open === false && 
+                                            {form.open === false ? (
                                                 <div className="flex space-x-2">
                                                     {editingFormId === form.id ? (
                                                         <>
@@ -314,7 +314,16 @@ const FormManager = () => {
                                                         </button>
                                                     )}
                                                 </div>
-                                                }
+                                            ) : (
+                                                <div className="flex space-x-2">
+                                                    <button
+                                                        onClick={() => copyToClipboard(form.id)}
+                                                        className="bg-green-600 hover:bg-green-700 text-white py-1 px-3 rounded text-sm"
+                                                    >
+                                                        {copied === form.id ? 'コピー済み' : 'URLコピー'}
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                         <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-sm">
                                             <div>
