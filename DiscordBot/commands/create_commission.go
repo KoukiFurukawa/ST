@@ -3,6 +3,7 @@ package commands
 import (
 	"bytes"
 	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 
@@ -56,11 +57,20 @@ func CreateCommissionCommand() *botRouter.Command {
 
 func handleCreateCommission(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	/*
-		pingコマンドの実行
+		create_commissionコマンドの実行
 
 		コマンドの実行結果を返す
 	*/
 	if i.Interaction.ApplicationCommandData().Name != "create_commission" {
+		return
+	}
+
+	// 3秒以内に一時応答を返す
+	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+	})
+	if err != nil {
+		log.Printf("初期応答失敗: %v\n", err)
 		return
 	}
 
@@ -111,10 +121,8 @@ func handleCreateCommission(s *discordgo.Session, i *discordgo.InteractionCreate
 		return
 	}
 
-	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Content: "委任状を作成し、APIに送信しました。",
-		},
+	msg := "委任状を作成し、APIに送信しました。"
+	s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+		Content: &msg,
 	})
 }
