@@ -7,8 +7,8 @@ import (
 )
 
 type Env struct {
-	TOKEN            string
-	ServerPort       string
+	TOKEN      string
+	ServerPort string
 }
 
 func NewEnv() (*Env, error) {
@@ -18,7 +18,11 @@ func NewEnv() (*Env, error) {
 	}
 
 	return &Env{
-		TOKEN:            os.Getenv("TOKEN"),
-		ServerPort:       os.Getenv("PORT"),
+		TOKEN:      os.Getenv("TOKEN"),
+		ServerPort: os.Getenv("PORT"),
 	}, nil
 }
+
+/* Copyright (c) 2025 古川幸樹　*/
+/* このソースコードは自由に使用、複製、改変、再配布することができます。 */
+/* ただし、著作権表示は削除しないでください。  */

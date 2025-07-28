@@ -28,3 +28,6 @@ func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 	}
 }
+
+// MIT License
+// Copyright (c) 2024 Haruki Sasaki

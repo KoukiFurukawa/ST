@@ -51,3 +51,7 @@ exe = EXE(
     codesign_identity=None,      # Mac用: コード署名
     entitlements_file=None,      # Mac用: entitlementsファイル
 )
+
+# Copyright (c) 2025 古川幸樹, 宮浦悠月士
+# このソースコードは自由に使用、複製、改変、再配布することができます。
+# ただし、著作権表示は削除しないでください。 

@@ -66,3 +66,7 @@ def display_results(result):
     print(f"- プロンプトトークン: {result.usage.prompt_tokens}")
 
     return result.choices[0].message.content
+
+# Copyright (c) 2025 コウレキトウ */
+# このソースコードは自由に使用、複製、改変、再配布することができます。 */
+# ただし、著作権表示は削除しないでください。  */

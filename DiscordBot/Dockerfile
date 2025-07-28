@@ -39,3 +39,6 @@ CMD ["/app/main"]
 
 # ビルダーステージからバイナリをコピー
 #COPY --from=builder /app/main /app/main
+
+# MIT License
+# Copyright (c) 2024 Haruki Sasaki

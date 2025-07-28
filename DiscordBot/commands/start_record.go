@@ -154,3 +154,10 @@ func responseText(s *discordgo.Session, i *discordgo.InteractionCreate, contentT
 	}
 	return err
 }
+
+// MIT License
+// Copyright (c) 2024 Haruki Sasaki
+
+/* Copyright (c) 2025 古川幸樹, 宮浦悠月士 */
+/* このソースコードは自由に使用、複製、改変、再配布することができます。 */
+/* ただし、著作権表示は削除しないでください。  */

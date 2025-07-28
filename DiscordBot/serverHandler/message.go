@@ -64,3 +64,6 @@ func (h *MessageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Message: "メッセージを送信しました",
 	})
 }
+
+// MIT License
+// Copyright (c) 2024 Haruki Sasaki

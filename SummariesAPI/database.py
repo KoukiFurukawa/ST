@@ -33,3 +33,8 @@ def create_anscosmos_client():
     cosmos_anscontainer = database.get_container_client(container_id)
 
     return cosmos_client, database, cosmos_anscontainer
+
+
+# Copyright (c) 2025 コウレキトウ */
+# このソースコードは自由に使用、複製、改変、再配布することができます。 */
+# ただし、著作権表示は削除しないでください。  */

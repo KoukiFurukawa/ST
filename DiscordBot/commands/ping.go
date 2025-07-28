@@ -47,3 +47,6 @@ func handlePing(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	}
 
 }
+
+// MIT License
+// Copyright (c) 2024 Haruki Sasaki

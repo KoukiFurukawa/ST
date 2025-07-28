@@ -129,3 +129,8 @@ async def get_ans_data():
     ans_data = [item for item in items]
 
     return ans_data
+
+
+# Copyright (c) 2025 コウレキトウ */
+# このソースコードは自由に使用、複製、改変、再配布することができます。 */
+# ただし、著作権表示は削除しないでください。  */

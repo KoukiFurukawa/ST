@@ -31,3 +31,6 @@ type Command struct {
 func (c *Command) AddApplicationCommand(appCmd *discordgo.ApplicationCommand) {
 	c.AppCommand = appCmd
 }
+
+// MIT License
+// Copyright (c) 2024 Haruki Sasaki

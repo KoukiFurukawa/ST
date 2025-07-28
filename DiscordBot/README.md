@@ -127,5 +127,5 @@ func RegisterHandlers(s *discordgo.Session) {
 ```
 </details>
 
-以下のような画像のように、ボイスチャンネルのステータスを受け取れていれば成功です。
-![](./image/vcstatestest.png)
+MIT License
+Copyright (c) 2024 Haruki Sasaki

@@ -11,6 +11,9 @@ type IndexService struct {
 // IndexServiceを返す
 func NewIndexService(discordSession *discordgo.Session) *IndexService {
 	return &IndexService{
-		DiscordSession : discordSession,
+		DiscordSession: discordSession,
 	}
 }
+
+// MIT License
+// Copyright (c) 2024 Haruki Sasaki
