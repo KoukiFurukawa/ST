@@ -25,6 +25,13 @@ export async function POST(req: NextRequest) {
             );
         }
 
+        // リクエストのURLからベースURLを取得
+        // const requestUrl = new URL(req.url);
+        // const baseUrl = `${requestUrl.protocol}//${requestUrl.host}`;
+        const baseUrl = 'https://7b125e853af8.ngrok-free.app/';
+        
+        const answerUrl = `${baseUrl}/answer/${requestData.id}`;
+
         // Fetchのみ実行
         fetch("http://localhost:8080/message", {
             method: "POST",
@@ -32,8 +39,8 @@ export async function POST(req: NextRequest) {
                 "Content-Type": "application/json",
             },
             body : JSON.stringify({
-                message: "新しい委任状が作成されました",
-                channel_id: "1329621965945700385"
+                message: `新しい委任状が作成されました。こちらから回答してください。\n${answerUrl}`,
+                channel_id: "1397512648223883316"
             })
         })
 
